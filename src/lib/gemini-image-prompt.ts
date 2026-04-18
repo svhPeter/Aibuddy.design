@@ -62,8 +62,9 @@ Quality rules:
 
 Avoid long essays, excessive punctuation, and generic filler. Stay practical.`;
 
+/** Default works with current Gemini API for new projects; override with GEMINI_MODEL if needed. */
 function defaultModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash";
+  return process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash";
 }
 
 export async function generateImagePromptFromImage(
