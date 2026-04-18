@@ -7,26 +7,24 @@ src/
     contact/page.tsx
     tools/page.tsx
     tools/audio-to-text/page.tsx
+    tools/image-to-prompt/page.tsx
     demo/clinic/page.tsx
     demo/real-estate/page.tsx
-    api/contact/route.ts
-    api/tools/audio-to-text/route.ts
+    api/tools/image-to-prompt/route.ts
   components/
     shared/
     agency/
-    tools/
     demos/
     conversion/
+    tools/
     ui/
   lib/
     utils.ts
-    email.ts
     rate-limiter.ts
-    file-validator.ts
-    google-speech.ts
+    validate-image-prompt-file.ts
+    gemini-image-prompt.ts
   config/
     site.ts
     services.ts
-    tools.ts
-  types/
-    index.ts
+    portfolio.ts
+    seo.ts

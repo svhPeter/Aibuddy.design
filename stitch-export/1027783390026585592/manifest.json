@@ -1,0 +1,15 @@
+{
+  "projectId": "1027783390026585592",
+  "screenId": "897ba45ab48b4fc582ec92dd82af173a",
+  "title": "AIBuddy Homepage",
+  "resourceName": "projects/1027783390026585592/screens/897ba45ab48b4fc582ec92dd82af173a",
+  "deviceType": "DESKTOP",
+  "width": "2560",
+  "height": "10470",
+  "localFiles": {
+    "screenshot": "aibuddy-homepage-screenshot.png",
+    "htmlCode": "aibuddy-homepage.html"
+  },
+  "fetchedAt": "2026-04-12",
+  "note": "Hosted downloadUrl links from get_screen may expire; re-fetch via Stitch MCP get_screen if needed."
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&amp;family=Space+Grotesk:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-dim": "#beee00",
+                    "on-primary": "#516700",
+                    "on-primary-fixed-variant": "#526900",
+                    "surface-container-highest": "#262626",
+                    "surface-bright": "#2c2c2c",
+                    "secondary-container": "#636100",
+                    "on-error": "#450900",
+                    "surface-variant": "#262626",
+                    "surface-container": "#1a1919",
+                    "surface-container-low": "#131313",
+                    "surface-tint": "#f3ffca",
+                    "tertiary-dim": "#edd13a",
+                    "primary-fixed-dim": "#beee00",
+                    "on-secondary-fixed": "#434100",
+                    "outline-variant": "#494847",
+                    "inverse-surface": "#fcf8f8",
+                    "surface-container-high": "#201f1f",
+                    "on-surface-variant": "#adaaaa",
+                    "surface-container-lowest": "#000000",
+                    "primary": "#f3ffca",
+                    "on-secondary": "#565400",
+                    "inverse-on-surface": "#565554",
+                    "error-container": "#b92902",
+                    "tertiary-fixed-dim": "#edd13a",
+                    "on-tertiary-fixed": "#483d00",
+                    "on-surface": "#ffffff",
+                    "on-tertiary": "#665800",
+                    "on-tertiary-fixed-variant": "#685900",
+                    "surface-dim": "#0e0e0e",
+                    "tertiary": "#ffeea5",
+                    "secondary-fixed": "#ece856",
+                    "secondary": "#ece856",
+                    "on-primary-fixed": "#3a4a00",
+                    "surface": "#0e0e0e",
+                    "inverse-primary": "#516700",
+                    "secondary-dim": "#ddda49",
+                    "tertiary-container": "#fce047",
+                    "secondary-fixed-dim": "#ddda49",
+                    "on-secondary-container": "#fffca4",
+                    "primary-fixed": "#cafd00",
+                    "error": "#ff7351",
+                    "on-secondary-fixed-variant": "#605e00",
+                    "on-primary-container": "#4a5e00",
+                    "on-error-container": "#ffd2c8",
+                    "error-dim": "#d53d18",
+                    "primary-container": "#cafd00",
+                    "background": "#0e0e0e",
+                    "tertiary-fixed": "#fce047",
+                    "outline": "#777575",
+                    "on-tertiary-container": "#5d5000",
+                    "on-background": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .editorial-grid {
+            background-image: radial-gradient(circle at 2px 2px, #262626 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .marquee-content {
+            display: inline-block;
+            animation: scroll 20s linear infinite;
+        }
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+        ::selection {
+            background-color: #cafd00;
+            color: #000;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-10 py-6 bg-[#0e0e0e]/90 backdrop-blur-xl">
+<div class="text-2xl font-black tracking-tighter text-[#cafd00] font-headline">AIBuddy</div>
+<div class="hidden md:flex gap-12">
+<a class="font-headline font-bold uppercase tracking-tighter transition-colors duration-300 text-[#cafd00] border-b-2 border-[#cafd00] pb-1" href="#">STRATEGY</a>
+<a class="font-headline font-bold uppercase tracking-tighter transition-colors duration-300 text-[#adaaaa] hover:text-[#f3ffca]" href="#">MODELS</a>
+<a class="font-headline font-bold uppercase tracking-tighter transition-colors duration-300 text-[#adaaaa] hover:text-[#f3ffca]" href="#">PORTFOLIO</a>
+<a class="font-headline font-bold uppercase tracking-tighter transition-colors duration-300 text-[#adaaaa] hover:text-[#f3ffca]" href="#">INSIGHTS</a>
+</div>
+<button class="bg-[#cafd00] text-[#516700] px-6 py-2 font-headline font-bold uppercase tracking-tighter transition-transform scale-95 active:scale-90 hover:bg-[#f3ffca]">
+            GET STARTED
+        </button>
+</nav>
+<!-- Hero Section -->
+<header class="relative min-h-screen flex items-center pt-24 px-10 editorial-grid">
+<div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+<div class="md:col-span-7 z-10">
+<h1 class="text-6xl md:text-8xl lg:text-9xl font-headline font-black uppercase tracking-tighter leading-[0.9] text-on-background">
+                    ARCHITECTING <br/> <span class="text-primary-container">INTELLIGENCE</span>
+</h1>
+<p class="mt-8 text-xl text-on-surface-variant max-w-lg font-light leading-relaxed">
+                    We bridge the gap between abstract neural networks and concrete business growth through editorial-grade AI ecosystems.
+                </p>
+<div class="mt-12 flex flex-col sm:flex-row gap-6">
+<button class="bg-primary-container text-on-primary px-10 py-4 font-headline font-black uppercase tracking-widest text-sm hover:bg-primary transition-colors">
+                        INITIATE PROJECT
+                    </button>
+<button class="border-2 border-outline text-on-background px-10 py-4 font-headline font-black uppercase tracking-widest text-sm hover:bg-surface-container-high transition-colors">
+                        VIEW MANIFESTO
+                    </button>
+</div>
+</div>
+<div class="md:col-span-5 relative aspect-square">
+<div class="absolute inset-0 bg-primary-container opacity-10 animate-pulse"></div>
+<img class="w-full h-full object-cover grayscale brightness-50 border-none" data-alt="Abstract 3D monochromatic structural render with sharp geometric shadows and high contrast futuristic architectural elements" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB9J1JK0IeXfhmRQUGsVVAGJ2OLcuI7ab2nPRrBt75inOV8FpJ3X-8a2R28do1uLYxrtPVm3S-eVaE7dqU7Tvs0n2VFSVUxJY-WaOqDO1RKoGXM8InyEezrhdyu-tJZnj-rNX_JBn1-6SWFCtVQ3MtOJb-McLCP_Uh65mea66rek4mN8ATGG4BcEBRbnvEUDC2AUxMGP5OcE_vK6wXWvnuQ1qEcBjBrYWrunhwzsvYNxy0denlNDFUzdiffpaehQ_WR2qV_IR0yO8"/>
+<div class="absolute -bottom-8 -left-8 bg-surface-container-low p-8 hidden lg:block">
+<span class="block font-headline text-4xl font-black text-primary-container">0.01s</span>
+<span class="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Latency Standard</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Marquee -->
+<div class="bg-primary-container py-4 border-none marquee-container overflow-hidden">
+<div class="marquee-content flex gap-12 items-center">
+<span class="text-on-primary font-headline font-black text-2xl uppercase tracking-tighter italic">AI WEBSITES • AUTOMATION • CHATBOTS • LEAD GEN • STRATEGIC DATA • NEURAL DESIGN • AI WEBSITES • AUTOMATION • CHATBOTS • LEAD GEN • STRATEGIC DATA • NEURAL DESIGN •</span>
+<span class="text-on-primary font-headline font-black text-2xl uppercase tracking-tighter italic">AI WEBSITES • AUTOMATION • CHATBOTS • LEAD GEN • STRATEGIC DATA • NEURAL DESIGN • AI WEBSITES • AUTOMATION • CHATBOTS • LEAD GEN • STRATEGIC DATA • NEURAL DESIGN •</span>
+</div>
+</div>
+<!-- Services Section -->
+<section class="py-32 px-10 bg-surface">
+<div class="max-w-7xl mx-auto">
+<div class="mb-20 flex flex-col md:flex-row justify-between items-end gap-6">
+<h2 class="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter leading-none">CORE<br/>UTILITIES</h2>
+<div class="w-24 h-1 bg-primary-container mb-2"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-1">
+<!-- Service 01 -->
+<div class="bg-surface-container-low p-12 group hover:bg-surface-container-high transition-colors duration-500">
+<span class="block font-headline text-4xl font-bold text-on-surface-variant mb-12 group-hover:text-primary-container transition-colors">01</span>
+<h3 class="text-3xl font-headline font-black uppercase tracking-tight mb-6">Autonomous<br/>Ecosystems</h3>
+<p class="text-on-surface-variant leading-relaxed mb-8">Deploy agents that manage lead acquisition, nurturing, and conversion without manual oversight.</p>
+<a class="inline-flex items-center gap-4 text-primary font-black tracking-widest text-xs uppercase hover:underline" href="#">
+                        EXPLORE TECH <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<!-- Service 02 -->
+<div class="bg-surface-container-low p-12 group hover:bg-surface-container-high transition-colors duration-500">
+<span class="block font-headline text-4xl font-bold text-on-surface-variant mb-12 group-hover:text-primary-container transition-colors">02</span>
+<h3 class="text-3xl font-headline font-black uppercase tracking-tight mb-6">Cognitive<br/>Interfaces</h3>
+<p class="text-on-surface-variant leading-relaxed mb-8">Next-gen UI that adapts in real-time to user intent through predictive behavioral modeling.</p>
+<a class="inline-flex items-center gap-4 text-primary font-black tracking-widest text-xs uppercase hover:underline" href="#">
+                        EXPLORE TECH <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<!-- Service 03 -->
+<div class="bg-surface-container-low p-12 group hover:bg-surface-container-high transition-colors duration-500">
+<span class="block font-headline text-4xl font-bold text-on-surface-variant mb-12 group-hover:text-primary-container transition-colors">03</span>
+<h3 class="text-3xl font-headline font-black uppercase tracking-tight mb-6">Neural<br/>Architectures</h3>
+<p class="text-on-surface-variant leading-relaxed mb-8">Custom fine-tuned LLMs built on proprietary data to give your brand a unique digital voice.</p>
+<a class="inline-flex items-center gap-4 text-primary font-black tracking-widest text-xs uppercase hover:underline" href="#">
+                        EXPLORE TECH <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+<!-- About Section -->
+<section class="py-32 px-10 bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-16 items-center">
+<div class="md:col-span-5 order-2 md:order-1">
+<div class="relative">
+<img class="w-full h-[600px] object-cover grayscale brightness-75" data-alt="Portrait of a visionary founder in a sharp dark suit against a dramatic shadow-heavy background, editorial aesthetic, high grain black and white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDa_TtEE27b9V6hDV0rkMBtJo4ZQKmZaz9ecFGiiy7ZUhoRJntdgzkzZf1gvKOsf8JK0jHO7-F1P272LVFqsD0Yyo3jVU2TrNdS0wXDWhBspmfwqct4jJ8nNzey_eo_QV5MrYFGyLW4tfljZXrnjOFyjnf68g2mvDZ7BO1u5q0EzuIxZeEZg6dXXlwyvGNI92jJi9klnlBBRAQUr6gdXKDko3D-YTeskTmI5pPJjcLCe2IFOGNkd6qbPx0zJmdyEINTgtdBNg0CwNw"/>
+<div class="absolute top-12 -right-12 bg-primary-container p-10 hidden xl:block">
+<div class="space-y-8">
+<div>
+<span class="block font-headline text-5xl font-black text-on-primary">12+</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-primary/70">Proprietary Models</span>
+</div>
+<div>
+<span class="block font-headline text-5xl font-black text-on-primary">250%</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-primary/70">Efficiency Yield</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-7 order-1 md:order-2">
+<h2 class="text-5xl md:text-7xl font-headline font-black uppercase tracking-tighter mb-12">THE HUMAN <br/>BEHIND THE MACHINE.</h2>
+<div class="space-y-8 text-lg text-on-surface-variant max-w-xl">
+<p>Founded by Viktor Thorne, AIBuddy was born from a desire to strip away the fluff of modern tech and return to the brutal efficiency of architecture.</p>
+<p>We don't just 'use' AI. We sculpt it. Our philosophy is rooted in the belief that intelligence is the ultimate raw material of the 21st century.</p>
+<div class="pt-8 border-t border-outline-variant">
+<span class="block font-headline text-xl font-bold text-on-surface uppercase mb-1">Viktor Thorne</span>
+<span class="text-xs font-bold uppercase tracking-widest text-primary-container">Chief Architect &amp; Founder</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Portfolio Section -->
+<section class="py-32 bg-surface">
+<div class="px-10 max-w-7xl mx-auto mb-20">
+<h2 class="text-5xl font-headline font-black uppercase tracking-tighter">SELECTED WORKS</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-1 px-10">
+<!-- Project 1 -->
+<div class="md:col-span-8 group relative overflow-hidden h-[500px]">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 brightness-50" data-alt="Futuristic cyber security interface with data streams and glowing nodes in dark atmospheric environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrOkc9Z60I16iJk3QU_pWojo9JaXvujju5ASp_JCYYZJE-GvafQ-5kPWika-2-YNfsI0QcjxVeNBytNytg3O1VLpAVqIR64RwVPSAT5FYN_UyDlC3JK1cbQYQelnRXp6vZS5qrl8mFz_pli_dSwcYT1zI8UC57KsA661B0mWNN9TivfJuP-rWh1bIdU5LoZbUHf8b3_0VFxjyI5RQtsgDGWWF_IzFjqcYSpDoSmiVEUtX1qRgAKdT3Z-8YD6o3xyu0HAo2Ftatubc"/>
+<div class="absolute inset-0 p-12 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-primary-container text-xs font-bold tracking-[0.3em] uppercase mb-4">FinTech / Automation</span>
+<h4 class="text-4xl font-headline font-black uppercase">Project Obsidian</h4>
+</div>
+</div>
+<!-- Project 2 -->
+<div class="md:col-span-4 group relative overflow-hidden h-[500px]">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 brightness-50" data-alt="Nebula-like digital network visualization with intricate glowing lines on deep black background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuuzXzPG811_oRDGyvDeDAesDcRS8x47VUtL9ymdu2ZxPgE8kuY6lyDz8M6K_GTeqEqSMeNlXtDirqoRLLIv8Jimb_aeA9Hy5ldPLWs2dN5fGbYGd6qCAvh0uZ9KMARnoj39_-0hSwQJNshkzDTZTQ7zAOzNZkvsybJe5XR6uQlG3MBEiyN0K3bn3c7UbWswMFXV8m89WeZJBaWacfYyHvnc8AzBBwmIR49oWqe8WaXMsSLHpQaH8o8hXCitLhckmp5VAVMLEMyRE"/>
+<div class="absolute inset-0 p-12 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-primary-container text-xs font-bold tracking-[0.3em] uppercase mb-4">E-Comm / Neural</span>
+<h4 class="text-4xl font-headline font-black uppercase">Nexus Core</h4>
+</div>
+</div>
+<!-- Project 3 -->
+<div class="md:col-span-4 group relative overflow-hidden h-[500px]">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 brightness-50" data-alt="Code on a dark monitor screen with sharp green highlights and technical aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQvZvwrmypb-oUC3HBbr22411YeAu-9s7W-iuDMwSp-L3R0eVlmemmwqEwsGh5nnf8AeYKJij5qO-qlqSlVPGuLHwS90hcRyq4YX31bXgmDmMgdUdvjkvIVTyhriXfZQneShDprHhYaT12keKW-4VmhsWTBpUTWwaUQ5RktqKhW2RdZkA-TGrcfRT-kogM6_MxRRzYgOiaDGKQEEhl0oXJc5SzM3Vo5xgIfe1UzIK75T_6LFsLRbq3W0SSFpGYlvT84Xit3k-wOlk"/>
+<div class="absolute inset-0 p-12 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-primary-container text-xs font-bold tracking-[0.3em] uppercase mb-4">SaaS / Integration</span>
+<h4 class="text-4xl font-headline font-black uppercase">Vanguard.AI</h4>
+</div>
+</div>
+<!-- Project 4 -->
+<div class="md:col-span-8 group relative overflow-hidden h-[500px]">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 brightness-50" data-alt="Robot hand interacting with a digital interface in a clean high-tech minimal lab setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcR_Lr2rv-Ijl_BnceXI77vTZRaDJ6r34SeXHTIFiOQ4p9I_fuJ1Tit48v34Q_Vr3pNDVwHdg0BugKW-mP65zUn834_tqJclHdvvpQb764nkI4zG-6SnMMUaQeTQBPcEPVtSiP4R08JW1okRo_8QHwJhxsVwILFYB2hHD_hoNGO0UYjQOlbQYjN7vnxZJ7EFnsJ2MN3VUBWo4dQ7rmItHsm9aXNOSSxCKKgbFaA2nYkjmCuvjb8MySie5BOC3hFbNpCNjdqbj847g"/>
+<div class="absolute inset-0 p-12 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-primary-container text-xs font-bold tracking-[0.3em] uppercase mb-4">Industrial / Robotics</span>
+<h4 class="text-4xl font-headline font-black uppercase">Iron Logic</h4>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-40 px-10 bg-primary-container overflow-hidden relative">
+<div class="max-w-7xl mx-auto relative z-10 text-center">
+<h2 class="text-6xl md:text-9xl font-headline font-black uppercase tracking-tighter text-on-primary leading-[0.8] mb-12">READY TO<br/>ACCELERATE?</h2>
+<p class="text-on-primary font-bold uppercase tracking-widest mb-16 text-xl">The future is a technical choice. Make yours.</p>
+<button class="bg-surface text-on-surface px-16 py-6 font-headline font-black uppercase tracking-[0.3em] hover:bg-surface-container-high transition-transform scale-100 hover:scale-105">
+                SECURE YOUR SLOT
+            </button>
+</div>
+<!-- Decorative abstract shape -->
+<div class="absolute -right-20 -bottom-20 w-96 h-96 bg-on-primary opacity-10 rotate-45 border-none"></div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-20 px-10 flex flex-col md:flex-row justify-between items-center gap-8 bg-[#000000] border-t border-[#262626]">
+<div class="flex flex-col gap-4 items-center md:items-start">
+<div class="text-xl font-bold text-white font-headline">AIBUDDY</div>
+<p class="font-['Inter'] text-xs tracking-widest uppercase text-[#777575]">©2024 AIBUDDY. ARCHITECTING INTELLIGENCE.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-12">
+<a class="font-['Inter'] text-xs tracking-widest uppercase text-[#777575] hover:text-[#cafd00] transition-colors opacity-80 hover:opacity-100" href="#">PRIVACY</a>
+<a class="font-['Inter'] text-xs tracking-widest uppercase text-[#777575] hover:text-[#cafd00] transition-colors opacity-80 hover:opacity-100" href="#">TERMS</a>
+<a class="font-['Inter'] text-xs tracking-widest uppercase text-[#777575] hover:text-[#cafd00] transition-colors opacity-80 hover:opacity-100" href="#">MANIFESTO</a>
+<a class="font-['Inter'] text-xs tracking-widest uppercase text-[#777575] hover:text-[#cafd00] transition-colors opacity-80 hover:opacity-100" href="#">CONTACT</a>
+</div>
+<div class="flex gap-6">
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary-container transition-colors" data-icon="grid_view">grid_view</span>
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary-container transition-colors" data-icon="terminal">terminal</span>
+<span class="material-symbols-outlined text-white cursor-pointer hover:text-primary-container transition-colors" data-icon="architecture">architecture</span>
+</div>
+</footer>
+</body></html>
