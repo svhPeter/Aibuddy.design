@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, ImagePlus, Loader2 } from "lucide-react";
 
@@ -15,6 +15,9 @@ type ResultPayload = {
 };
 
 type Phase = "idle" | "loading" | "done";
+
+/** Client-side ceiling for a generate request, in ms. */
+const GENERATE_TIMEOUT_MS = 45_000;
 
 function copyText(text: string): Promise<void> {
   if (navigator.clipboard?.writeText) {
@@ -93,50 +96,46 @@ export function ImageToPromptForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [code, setCode] = useState<string | null>(null);
   const [result, setResult] = useState<ResultPayload | null>(null);
 
-  const clearPreview = useCallback(() => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
+  // Revoke the blob: URL when it is replaced or when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
   }, [previewUrl]);
 
-  const onPick = useCallback(
-    (f: File | null) => {
-      clearPreview();
-      setResult(null);
-      setError(null);
-      setCode(null);
-      if (!f) {
-        setFile(null);
-        setPreviewUrl(null);
-        return;
-      }
-      setFile(f);
-      setPreviewUrl(URL.createObjectURL(f));
-    },
-    [clearPreview],
-  );
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!file) {
-      setError("Choose an image first.");
+  const onPick = useCallback((f: File | null) => {
+    setResult(null);
+    setError(null);
+    if (!f) {
+      setFile(null);
+      setPreviewUrl(null);
       return;
     }
+    setFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
+  }, []);
+
+  const generate = useCallback(async (source: File) => {
     setPhase("loading");
     setError(null);
-    setCode(null);
     setResult(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      GENERATE_TIMEOUT_MS,
+    );
+
     const body = new FormData();
-    body.set("file", file);
+    body.set("file", source);
 
     try {
       const res = await fetch("/api/tools/image-to-prompt", {
         method: "POST",
         body,
+        signal: controller.signal,
       });
       const data: unknown = await res.json().catch(() => null);
       const payload = data as {
@@ -152,7 +151,6 @@ export function ImageToPromptForm({
             ? payload.error
             : "Something went wrong.",
         );
-        setCode(typeof payload.code === "string" ? payload.code : null);
         setPhase("idle");
         return;
       }
@@ -164,10 +162,25 @@ export function ImageToPromptForm({
         setError("Unexpected response.");
         setPhase("idle");
       }
-    } catch {
-      setError("Network error. Check your connection and try again.");
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setError("This is taking longer than usual. Please try again.");
+      } else {
+        setError("Network error. Check your connection and try again.");
+      }
       setPhase("idle");
+    } finally {
+      clearTimeout(timeoutId);
     }
+  }, []);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) {
+      setError("Choose an image first.");
+      return;
+    }
+    await generate(file);
   }
 
   return (
@@ -254,7 +267,7 @@ export function ImageToPromptForm({
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Runs on the server with Gemini — your API key stays private.
+            Free to use · up to 15 images a day.
           </p>
         </div>
 
@@ -264,16 +277,6 @@ export function ImageToPromptForm({
             className="rounded-lg border-2 border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
           >
             <p className="font-medium">{error}</p>
-            {code === "RATE_LIMIT" ? (
-              <p className="mt-2 text-xs text-destructive/80">
-                Free tier: limited generations per day per connection.
-              </p>
-            ) : null}
-            {code === "NOT_CONFIGURED" ? (
-              <p className="mt-2 text-xs text-destructive/80">
-                The deployment needs GEMINI_API_KEY set on the server.
-              </p>
-            ) : null}
           </div>
         ) : null}
       </form>
@@ -282,19 +285,19 @@ export function ImageToPromptForm({
         <div className="space-y-6">
           <CopyBlock label="Short prompt" text={result.shortPrompt} />
           <CopyBlock
-            label="Detailed universal prompt"
+            label="Detailed prompt"
             text={result.detailedUniversalPrompt}
           />
           {result.negativePrompt ? (
             <CopyBlock
-              label="Optional negative prompt"
+              label="Negative prompt"
               text={result.negativePrompt}
               mono
             />
           ) : null}
           <div className="rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
-              Quick tags
+              Tags
             </h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {result.quickTags.map((tag) => (
@@ -317,6 +320,21 @@ export function ImageToPromptForm({
             >
               <Copy className="size-4" aria-hidden />
               <span className="ml-1.5">Copy tags</span>
+            </Button>
+          </div>
+
+          <div className="flex justify-center pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-none"
+              disabled={!file}
+              onClick={() => {
+                if (file) void generate(file);
+              }}
+            >
+              Generate again
             </Button>
           </div>
         </div>

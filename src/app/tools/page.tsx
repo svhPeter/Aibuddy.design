@@ -43,9 +43,9 @@ export default function ToolsPage() {
                 Image to Prompt
               </span>
               <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                Upload JPG, PNG, or WebP. Get a short prompt, a detailed universal
-                prompt, optional negatives, and quick tags — powered by Gemini on the
-                server.
+                Upload JPG, PNG, or WebP. Get a short prompt, a detailed prompt,
+                optional negatives, and tags — ready to paste into your favourite
+                image generator.
               </p>
               <span className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#cafd00] group-hover:underline">
                 Open tool

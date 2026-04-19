@@ -12,7 +12,15 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** Conservative daily cap per client IP (in-memory). */
+/**
+ * Conservative daily cap per client IP.
+ *
+ * Backed by an in-memory store (see `src/lib/rate-limiter.ts`). This cap is
+ * only enforced reliably on single-instance deployments. On serverless /
+ * multi-instance hosts each process has its own counter, so the effective
+ * cap is LIMIT_PER_DAY × (warm instances). Treat this as cost-protection on
+ * a single VM, not as a hard ceiling in production at scale.
+ */
 const LIMIT_PER_DAY = 15;
 
 export async function POST(request: Request) {
@@ -27,7 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Daily limit reached (${LIMIT_PER_DAY} generations per day). Try again later.`,
+        error:
+          "You've hit today's limit. Come back tomorrow, or get in touch if you need more.",
         code: "RATE_LIMIT",
       },
       {
@@ -93,22 +102,76 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     if (error instanceof GeminiNotConfiguredError) {
+      console.error("[image-to-prompt] not configured:", error);
       return NextResponse.json(
         {
           ok: false,
-          error:
-            "Image to Prompt is not configured (missing GEMINI_API_KEY on the server).",
+          error: "This tool is temporarily unavailable. Please check back soon.",
           code: "NOT_CONFIGURED",
         },
         { status: 503 },
       );
     }
     if (error instanceof GeminiImagePromptError) {
+      console.error(
+        `[image-to-prompt] ${error.code}:`,
+        error.cause ?? error,
+      );
+      const mapped = mapGeminiError(error.code);
       return NextResponse.json(
-        { ok: false, error: error.message, code: "GEMINI_ERROR" },
-        { status: 422 },
+        { ok: false, error: mapped.message, code: error.code },
+        { status: mapped.status },
       );
     }
-    throw error;
+    console.error("[image-to-prompt] unexpected:", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Something went wrong. Please try again.",
+        code: "UNKNOWN",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+/** Map internal error codes to user-facing copy. No raw upstream text is exposed. */
+function mapGeminiError(code: string): { message: string; status: number } {
+  switch (code) {
+    case "SAFETY_BLOCKED":
+      return {
+        message: "This image can't be processed. Try a different one.",
+        status: 422,
+      };
+    case "INVALID_KEY":
+      return {
+        message: "This tool is temporarily unavailable. Please try again later.",
+        status: 503,
+      };
+    case "QUOTA":
+      return {
+        message: "The service is busy right now. Please try again in a minute.",
+        status: 429,
+      };
+    case "TIMEOUT":
+      return {
+        message: "The request took too long. Try a smaller image or try again.",
+        status: 504,
+      };
+    case "BAD_IMAGE":
+      return {
+        message: "We couldn't read that image. Try a different JPG, PNG, or WebP.",
+        status: 422,
+      };
+    case "BAD_RESPONSE":
+      return {
+        message: "Something went wrong generating the prompt. Please try again.",
+        status: 502,
+      };
+    default:
+      return {
+        message: "Something went wrong. Please try again.",
+        status: 500,
+      };
   }
 }

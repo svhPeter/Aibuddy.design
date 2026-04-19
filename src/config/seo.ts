@@ -4,10 +4,10 @@ import { siteConfig } from "@/config/site";
  * Default Open Graph / Twitter card image — file under `public/` (e.g. `og.png`).
  * Recommended: 1200×630, JPG or PNG, under 1 MB.
  *
- * Set to `"/og.png"` after you add `public/og.png`. Leave `null` to omit
- * `og:image` / `twitter:image` until the asset exists (avoids broken previews).
+ * Set to `null` to omit `og:image` / `twitter:image` until the asset exists
+ * (avoids broken previews).
  */
-export const OPEN_GRAPH_IMAGE_PATH: string | null = null;
+export const OPEN_GRAPH_IMAGE_PATH: string | null = "/og.png";
 
 const OG_DIMS = { width: 1200, height: 630 } as const;
 

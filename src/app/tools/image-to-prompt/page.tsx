@@ -9,7 +9,7 @@ import { getWhatsAppContactHref, siteConfig } from "@/config/site";
 export const metadata: Metadata = {
   title: "Image to Prompt",
   description:
-    "Upload an image and get short and detailed prompts for AI image tools — powered by Gemini on the server.",
+    "Turn any reference image into ready-to-use prompts for AI image tools — a short prompt, a detailed prompt, optional negatives, and tags.",
 };
 
 export default function ImageToPromptPage() {
@@ -20,7 +20,7 @@ export default function ImageToPromptPage() {
       <PageHeading
         eyebrow="Tool"
         title="Image to Prompt"
-        description="Upload a reference image. We return a concise prompt, a richer universal prompt, optional negatives, and quick tags — tuned for typical image generators."
+        description="Drop in a reference image. Get a short prompt, a detailed prompt, optional negatives, and tags you can paste straight into your favourite image generator."
       />
 
       <MarketingSection>
