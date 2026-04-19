@@ -1,6 +1,6 @@
 /**
  * Single source of truth for Stitch portfolio tiles — homepage and /portfolio.
- * Visuals are local abstract SVGs (not screenshots posing as client work).
+ * Visuals are local abstract PNGs (not screenshots posing as client work).
  */
 
 /** Homepage portfolio heading + /portfolio page — one narrative (copy only; tiles are `portfolioTiles`). */
@@ -26,7 +26,7 @@ export const portfolioPersonalSite = {
   description:
     "Personal portfolio showcasing design, frontend, and product work.",
   href: "https://sami-portfolio-lime.vercel.app/",
-  imageSrc: "/home/portfolio/svh-portfolio.svg",
+  imageSrc: "/home/portfolio/svh-portfolio.png",
   span: "full" as const,
   external: true,
 };
@@ -37,7 +37,7 @@ export const portfolioTiles = [
     href: "/demo/clinic",
     eyebrow: "Demonstration",
     title: "AI Clinic Demo",
-    imageSrc: "/home/portfolio/clinic-demo.svg",
+    imageSrc: "/home/portfolio/clinic-demo.png",
     span: "lg" as const,
   },
   {
@@ -45,7 +45,7 @@ export const portfolioTiles = [
     href: "/demo/real-estate",
     eyebrow: "Demonstration",
     title: "Real Estate Demo",
-    imageSrc: "/home/portfolio/real-estate-demo.svg",
+    imageSrc: "/home/portfolio/real-estate-demo.png",
     span: "sm" as const,
   },
   {
@@ -53,7 +53,7 @@ export const portfolioTiles = [
     href: "/tools/image-to-prompt",
     eyebrow: "Studio utility",
     title: "Image to Prompt",
-    imageSrc: "/home/portfolio/image-to-prompt.svg",
+    imageSrc: "/home/portfolio/image-to-prompt.png",
     span: "sm" as const,
   },
   {
@@ -61,7 +61,7 @@ export const portfolioTiles = [
     href: "/services",
     eyebrow: "How we work",
     title: "AIBuddy Studio System",
-    imageSrc: "/home/portfolio/studio-system.svg",
+    imageSrc: "/home/portfolio/studio-system.png",
     span: "lg" as const,
   },
   {
