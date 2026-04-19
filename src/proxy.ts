@@ -65,7 +65,11 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
+    // Match everything except Next internals, static assets, and the OAuth
+    // callback. `/auth/callback` is excluded because the route handler owns the
+    // PKCE cookie exchange via exchangeCodeForSession — running the @supabase/ssr
+    // middleware client there first can clobber the code_verifier cookie and
+    // break sign-in. See https://supabase.com/docs/guides/auth/server-side/nextjs
+    "/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
   ],
 };

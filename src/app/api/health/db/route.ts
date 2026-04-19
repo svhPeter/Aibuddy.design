@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getLastCallbackError } from "@/lib/auth-debug";
 import { prisma } from "@/lib/prisma";
 import { getLastEnsureProfileError } from "@/lib/profile";
 
@@ -130,6 +131,7 @@ export async function GET(request: Request) {
       db,
       schema,
       counts,
+      lastCallbackError: getLastCallbackError(),
       lastEnsureProfileError: getLastEnsureProfileError(),
     },
     { status: allOk ? 200 : 500 },

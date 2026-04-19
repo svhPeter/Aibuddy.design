@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { setLastCallbackError } from "@/lib/auth-debug";
 import { ensureProfile } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,8 @@ export const dynamic = "force-dynamic";
  *    falling back to /account.
  *
  * Any failure sends the user back to /sign-in with a short, non-leaky error
- * code so the UI can explain what went wrong.
+ * code so the UI can explain what went wrong. The real error is stashed in
+ * module state (src/lib/auth-debug.ts) and surfaced by /api/health/db.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -36,12 +38,19 @@ export async function GET(request: Request) {
       errorParam,
       errorDescription,
     );
+    setLastCallbackError("provider", null, {
+      message: errorDescription ?? errorParam,
+      code: errorParam,
+    });
     return NextResponse.redirect(
       new URL(`/sign-in?error=${encodeURIComponent(errorParam)}`, url),
     );
   }
 
   if (!code) {
+    setLastCallbackError("missing_code", null, {
+      message: "No ?code param on callback",
+    });
     return NextResponse.redirect(new URL("/sign-in?error=missing_code", url));
   }
 
@@ -49,6 +58,10 @@ export async function GET(request: Request) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.session) {
     console.error("[auth/callback] exchange failed:", error);
+    setLastCallbackError("exchange", error, {
+      message: error?.message ?? "exchangeCodeForSession returned no session",
+      status: error?.status,
+    });
     return NextResponse.redirect(
       new URL("/sign-in?error=auth_callback_failed", url),
     );
@@ -64,6 +77,7 @@ export async function GET(request: Request) {
       // Non-fatal: if the DB write fails we still have a valid session and
       // /account will retry ensureProfile on load.
       console.error("[auth/callback] ensureProfile failed:", e);
+      setLastCallbackError("ensure_profile", e);
     }
   }
 
