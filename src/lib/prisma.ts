@@ -6,6 +6,26 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
+ * Strips accidental surrounding quotes from an env var value. Pasting into the
+ * Vercel dashboard with quotes is a common foot-gun — the value gets stored as
+ * `"postgresql://..."` and the pg driver parses the host as `base` (last token
+ * of `/postgres"`), which surfaces as a confusing `Can't reach database server
+ * at base`. We normalise here and log a warning so ops can fix the env.
+ */
+function normaliseDatabaseUrl(raw: string): string {
+  const trimmed = raw.trim();
+  const wrappedDouble = trimmed.startsWith('"') && trimmed.endsWith('"');
+  const wrappedSingle = trimmed.startsWith("'") && trimmed.endsWith("'");
+  if (wrappedDouble || wrappedSingle) {
+    console.warn(
+      "[prisma] DATABASE_URL was wrapped in literal quotes — stripping. Remove the surrounding quotes in your hosting provider's env settings.",
+    );
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+/**
  * Redacts the password and trims params from a Postgres URL so it's safe to
  * log on boot — useful for verifying that production is hitting the URL we
  * expect (right host, right port, right database).
@@ -22,60 +42,13 @@ function redactPgUrl(url: string): string {
 }
 
 function createPrismaClient() {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) {
     throw new Error(
       "DATABASE_URL is not set. Add your Supabase pooled URL to .env or your hosting provider's env settings.",
     );
   }
-
-  // #region agent log
-  try {
-    const parsed = (() => {
-      try {
-        const u = new URL(url);
-        return {
-          protocol: u.protocol,
-          hostname: u.hostname,
-          port: u.port,
-          pathname: u.pathname,
-          hasPgbouncer: u.searchParams.has("pgbouncer"),
-          leadingQuote: url.startsWith('"') || url.startsWith("'"),
-          trailingQuote: url.endsWith('"') || url.endsWith("'"),
-          hasBrackets: url.includes("["),
-          length: url.length,
-        };
-      } catch {
-        return { parseError: true, length: url.length };
-      }
-    })();
-    fetch(
-      "http://127.0.0.1:7597/ingest/0713d568-669d-4c56-8119-14d5e787208a",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "ad1c0a",
-        },
-        body: JSON.stringify({
-          sessionId: "ad1c0a",
-          hypothesisId: "H1,H2,H3",
-          location: "src/lib/prisma.ts:createPrismaClient",
-          message: "DATABASE_URL parse check",
-          data: {
-            parsed,
-            nodeEnv: process.env.NODE_ENV ?? null,
-            vercelEnv: process.env.VERCEL_ENV ?? null,
-            vercelRegion: process.env.VERCEL_REGION ?? null,
-          },
-          timestamp: Date.now(),
-        }),
-      },
-    ).catch(() => {});
-  } catch {
-    /* ignore */
-  }
-  // #endregion
+  const url = normaliseDatabaseUrl(raw);
 
   // Serverless-friendly pg pool config:
   // - max: 1 — every Vercel function instance gets its own pool, so a single
