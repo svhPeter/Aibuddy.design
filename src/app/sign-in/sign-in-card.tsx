@@ -21,10 +21,18 @@ export function SignInCard({ next }: SignInCardProps) {
     try {
       const supabase = createSupabaseBrowserClient();
       const origin = window.location.origin;
+      // Must match one of the URLs in Supabase dashboard → Authentication →
+      // URL Configuration → Redirect URLs, otherwise Supabase falls back to
+      // the Site URL and the callback route never runs.
       const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          // Ask Google for a fresh consent each time so users can switch
+          // accounts; drop this if you'd rather silent-reauth returning users.
+          queryParams: { access_type: "offline", prompt: "select_account" },
+        },
       });
       if (error) {
         setError("Could not start sign-in. Please try again.");

@@ -17,6 +17,20 @@ type SignInPageProps = {
   searchParams: Promise<{ next?: string; error?: string }>;
 };
 
+function errorCopy(code: string): string {
+  switch (code) {
+    case "missing_code":
+      return "Sign-in link is missing a code. Please start again.";
+    case "auth_callback_failed":
+    case "exchange":
+      return "We couldn't finish signing you in. Please try again.";
+    case "access_denied":
+      return "Sign-in was cancelled. You can try again any time.";
+    default:
+      return "Sign-in didn't complete. Please try again.";
+  }
+}
+
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
   const next =
@@ -39,7 +53,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         <SignInCard next={next} />
         {params.error ? (
           <p className="mt-6 text-center text-sm text-destructive">
-            Sign-in didn&apos;t complete. Please try again.
+            {errorCopy(params.error)}
           </p>
         ) : null}
       </MarketingSection>
