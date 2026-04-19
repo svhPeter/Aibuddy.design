@@ -8,6 +8,15 @@ import { buttonVariants } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
+export type HeaderAuth = {
+  email: string;
+  creditsBalance: number;
+};
+
+type SiteHeaderProps = {
+  auth: HeaderAuth | null;
+};
+
 /** Primary nav — labels match destination pages. */
 const navItems = [
   { href: "/services", label: "Strategy" },
@@ -19,8 +28,12 @@ const navItems = [
 const linkBase =
   "font-heading border-b-2 pb-1 text-sm font-bold uppercase tracking-tighter transition-colors duration-300";
 
-export function SiteHeader() {
+export function SiteHeader({ auth }: SiteHeaderProps) {
   const pathname = usePathname();
+  const accountLabel = auth
+    ? `Account · ${auth.creditsBalance}`
+    : "Sign in";
+  const accountHref = auth ? "/account" : "/sign-in";
 
   return (
     <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#262626]/80 bg-[#0e0e0e]/95 px-6 py-5 backdrop-blur-xl backdrop-saturate-150 sm:px-10 supports-[padding:max(0px)]:pt-[max(1.1rem,env(safe-area-inset-top))]">
@@ -56,15 +69,26 @@ export function SiteHeader() {
         })}
       </nav>
 
-      <Link
-        href="/contact"
-        className={cn(
-          buttonVariants({ variant: "default", size: "sm" }),
-          "hidden rounded-none border-0 bg-[#cafd00] px-6 py-2 font-heading text-xs font-bold uppercase tracking-tighter text-[#516700] hover:bg-[#f3ffca] md:inline-flex",
-        )}
-      >
-        Get started
-      </Link>
+      <div className="hidden items-center gap-3 md:flex">
+        <Link
+          href={accountHref}
+          className={cn(
+            linkBase,
+            "border-transparent text-stitch-muted hover:text-[#f3ffca]",
+          )}
+        >
+          {accountLabel}
+        </Link>
+        <Link
+          href="/contact"
+          className={cn(
+            buttonVariants({ variant: "default", size: "sm" }),
+            "rounded-none border-0 bg-[#cafd00] px-6 py-2 font-heading text-xs font-bold uppercase tracking-tighter text-[#516700] hover:bg-[#f3ffca]",
+          )}
+        >
+          Get started
+        </Link>
+      </div>
 
       <div className="flex items-center gap-2 md:hidden">
         <Link
@@ -100,6 +124,12 @@ export function SiteHeader() {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                href={accountHref}
+                className="min-h-12 px-4 py-3.5 font-heading text-sm font-bold uppercase tracking-tighter text-white hover:bg-[#201f1f]"
+              >
+                {accountLabel}
+              </Link>
               <Link
                 href="/contact"
                 className="min-h-12 px-4 py-3.5 font-heading text-sm font-bold uppercase tracking-tighter text-[#cafd00] hover:bg-[#201f1f]"

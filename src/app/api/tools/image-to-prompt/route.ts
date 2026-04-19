@@ -5,7 +5,10 @@ import {
   GeminiNotConfiguredError,
   generateImagePromptFromImage,
 } from "@/lib/gemini-image-prompt";
+import { InsufficientCreditsError, spendCredit } from "@/lib/credits";
+import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limiter";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateImagePromptFile } from "@/lib/validate-image-prompt-file";
 
 export const runtime = "nodejs";
@@ -22,8 +25,43 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * a single VM, not as a hard ceiling in production at scale.
  */
 const LIMIT_PER_DAY = 15;
+const TOOL = "image-to-prompt";
 
 export async function POST(request: Request) {
+  // Auth gate — must be signed in to generate.
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Please sign in to generate prompts.",
+        code: "UNAUTHENTICATED",
+      },
+      { status: 401 },
+    );
+  }
+
+  // Credits gate — check balance up front for a friendly error.
+  const profile = await prisma.profile.findUnique({
+    where: { id: user.id },
+    select: { creditsBalance: true },
+  });
+  const creditsBalance = profile?.creditsBalance ?? 0;
+  if (creditsBalance <= 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "You're out of credits. Paid credits are coming soon.",
+        code: "INSUFFICIENT_CREDITS",
+        creditsBalance,
+      },
+      { status: 402 },
+    );
+  }
+
   const clientKey = getClientKey(request.headers);
   const limited = checkRateLimit(
     `image-prompt:${clientKey}`,
@@ -38,6 +76,7 @@ export async function POST(request: Request) {
         error:
           "You've hit today's limit. Come back tomorrow, or get in touch if you need more.",
         code: "RATE_LIMIT",
+        creditsBalance,
       },
       {
         status: 429,
@@ -49,7 +88,12 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
     return NextResponse.json(
-      { ok: false, error: "Expected multipart/form-data.", code: "BAD_REQUEST" },
+      {
+        ok: false,
+        error: "Expected multipart/form-data.",
+        code: "BAD_REQUEST",
+        creditsBalance,
+      },
       { status: 400 },
     );
   }
@@ -59,7 +103,12 @@ export async function POST(request: Request) {
     formData = await request.formData();
   } catch {
     return NextResponse.json(
-      { ok: false, error: "Could not parse form data.", code: "BAD_REQUEST" },
+      {
+        ok: false,
+        error: "Could not parse form data.",
+        code: "BAD_REQUEST",
+        creditsBalance,
+      },
       { status: 400 },
     );
   }
@@ -67,7 +116,12 @@ export async function POST(request: Request) {
   const file = formData.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json(
-      { ok: false, error: "Missing image file.", code: "MISSING_FILE" },
+      {
+        ok: false,
+        error: "Missing image file.",
+        code: "MISSING_FILE",
+        creditsBalance,
+      },
       { status: 400 },
     );
   }
@@ -75,7 +129,12 @@ export async function POST(request: Request) {
   const validation = validateImagePromptFile(file);
   if (!validation.ok) {
     return NextResponse.json(
-      { ok: false, error: validation.error, code: "INVALID_FILE" },
+      {
+        ok: false,
+        error: validation.error,
+        code: "INVALID_FILE",
+        creditsBalance,
+      },
       { status: 400 },
     );
   }
@@ -89,6 +148,7 @@ export async function POST(request: Request) {
         ok: false,
         error: "Could not read the file. Try a smaller image.",
         code: "READ_FAILED",
+        creditsBalance,
       },
       { status: 400 },
     );
@@ -99,7 +159,26 @@ export async function POST(request: Request) {
       new Uint8Array(buffer),
       file.type.toLowerCase(),
     );
-    return NextResponse.json({ ok: true, result });
+    // Only deduct credits on successful generation.
+    let newBalance = creditsBalance;
+    try {
+      const spent = await spendCredit(user.id, TOOL);
+      newBalance = spent.creditsBalance;
+    } catch (e) {
+      if (e instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "You're out of credits. Paid credits are coming soon.",
+            code: "INSUFFICIENT_CREDITS",
+            creditsBalance: 0,
+          },
+          { status: 402 },
+        );
+      }
+      throw e;
+    }
+    return NextResponse.json({ ok: true, result, creditsBalance: newBalance });
   } catch (error) {
     if (error instanceof GeminiNotConfiguredError) {
       console.error("[image-to-prompt] not configured:", error);
@@ -108,6 +187,7 @@ export async function POST(request: Request) {
           ok: false,
           error: "This tool is temporarily unavailable. Please check back soon.",
           code: "NOT_CONFIGURED",
+          creditsBalance,
         },
         { status: 503 },
       );
@@ -119,7 +199,12 @@ export async function POST(request: Request) {
       );
       const mapped = mapGeminiError(error.code);
       return NextResponse.json(
-        { ok: false, error: mapped.message, code: error.code },
+        {
+          ok: false,
+          error: mapped.message,
+          code: error.code,
+          creditsBalance,
+        },
         { status: mapped.status },
       );
     }
@@ -129,6 +214,7 @@ export async function POST(request: Request) {
         ok: false,
         error: "Something went wrong. Please try again.",
         code: "UNKNOWN",
+        creditsBalance,
       },
       { status: 500 },
     );

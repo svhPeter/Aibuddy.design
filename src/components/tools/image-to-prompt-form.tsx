@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Check, Copy, ImagePlus, Loader2 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -84,19 +85,27 @@ function CopyBlock({ label, text, mono }: CopyBlockProps) {
 type ImageToPromptFormProps = {
   whatsappHref: string | null;
   contactEmail: string;
+  isAuthenticated: boolean;
+  creditsBalance: number;
 };
 
 export function ImageToPromptForm({
   whatsappHref,
   contactEmail,
+  isAuthenticated,
+  creditsBalance: initialCredits,
 }: ImageToPromptFormProps) {
   const inputId = useId();
+  const pathname = usePathname();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ResultPayload | null>(null);
+  const [credits, setCredits] = useState<number>(initialCredits);
+
+  const canGenerate = isAuthenticated && credits > 0;
 
   // Revoke the blob: URL when it is replaced or when the component unmounts.
   useEffect(() => {
@@ -143,6 +152,7 @@ export function ImageToPromptForm({
         error?: string;
         code?: string;
         result?: ResultPayload;
+        creditsBalance?: number;
       };
 
       if (!res.ok || !payload.ok) {
@@ -151,12 +161,18 @@ export function ImageToPromptForm({
             ? payload.error
             : "Something went wrong.",
         );
+        if (typeof payload.creditsBalance === "number") {
+          setCredits(payload.creditsBalance);
+        }
         setPhase("idle");
         return;
       }
 
       if (payload.result) {
         setResult(payload.result);
+        if (typeof payload.creditsBalance === "number") {
+          setCredits(payload.creditsBalance);
+        }
         setPhase("done");
       } else {
         setError("Unexpected response.");
@@ -181,6 +197,78 @@ export function ImageToPromptForm({
       return;
     }
     await generate(file);
+  }
+
+  // Signed-out gate — browse is fine, generation requires sign-in.
+  if (!isAuthenticated) {
+    const next = pathname || "/tools/image-to-prompt";
+    return (
+      <div className="space-y-8">
+        <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm sm:p-8">
+          <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+            Sign in to generate
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            New accounts get 5 free credits. One credit covers one image.
+          </p>
+          <div className="mt-5">
+            <Link
+              href={`/sign-in?next=${encodeURIComponent(next)}`}
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]",
+              )}
+            >
+              Sign in with Google
+            </Link>
+          </div>
+        </div>
+        <ContactFooter
+          whatsappHref={whatsappHref}
+          contactEmail={contactEmail}
+        />
+      </div>
+    );
+  }
+
+  // Signed-in but out of credits.
+  if (credits <= 0) {
+    return (
+      <div className="space-y-8">
+        <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm sm:p-8">
+          <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+            You&apos;re out of credits
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You&apos;ve used your free credits. Paid credits are coming soon —
+            reach out if you need more right now.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="lg"
+              disabled
+              className="rounded-none bg-[#cafd00]/40 font-heading text-xs font-bold uppercase tracking-widest text-[#516700]/60"
+            >
+              Buy credits (coming soon)
+            </Button>
+            <Link
+              href="/account"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "rounded-none",
+              )}
+            >
+              Account
+            </Link>
+          </div>
+        </div>
+        <ContactFooter
+          whatsappHref={whatsappHref}
+          contactEmail={contactEmail}
+        />
+      </div>
+    );
   }
 
   return (
@@ -253,7 +341,7 @@ export function ImageToPromptForm({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <Button
             type="submit"
-            disabled={!file || phase === "loading"}
+            disabled={!file || phase === "loading" || !canGenerate}
             size="lg"
             className="rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]"
           >
@@ -267,7 +355,7 @@ export function ImageToPromptForm({
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Free to use · up to 15 images a day.
+            Credits remaining: <span className="font-semibold text-foreground">{credits}</span> · 1 credit per image.
           </p>
         </div>
 
@@ -329,9 +417,9 @@ export function ImageToPromptForm({
               variant="outline"
               size="sm"
               className="rounded-none"
-              disabled={!file}
+              disabled={!file || credits <= 0}
               onClick={() => {
-                if (file) void generate(file);
+                if (file && credits > 0) void generate(file);
               }}
             >
               Generate again
@@ -340,39 +428,53 @@ export function ImageToPromptForm({
         </div>
       ) : null}
 
-      <div className="border-t border-border pt-8">
-        <p className="text-sm text-muted-foreground">
-          Need something custom-built?{" "}
-          {whatsappHref ? (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-[#cafd00] underline-offset-4 hover:underline"
-            >
-              WhatsApp
-            </a>
-          ) : (
-            <Link
-              href="/contact"
-              className="font-medium text-[#cafd00] underline-offset-4 hover:underline"
-            >
-              Contact
-            </Link>
-          )}{" "}
-          or{" "}
+      <ContactFooter whatsappHref={whatsappHref} contactEmail={contactEmail} />
+    </div>
+  );
+}
+
+type ContactFooterProps = {
+  whatsappHref: string | null;
+  contactEmail: string;
+};
+
+function ContactFooter({ whatsappHref, contactEmail }: ContactFooterProps) {
+  return (
+    <div className="border-t border-border pt-8">
+      <p className="text-sm text-muted-foreground">
+        Need something custom-built?{" "}
+        {whatsappHref ? (
           <a
-            href={`mailto:${contactEmail}`}
-            className="font-medium text-foreground underline-offset-4 hover:underline"
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[#cafd00] underline-offset-4 hover:underline"
           >
-            email
-          </a>{" "}
-          ·{" "}
-          <Link href="/services" className={cn(buttonVariants({ variant: "link" }), "h-auto p-0")}>
-            Services
+            WhatsApp
+          </a>
+        ) : (
+          <Link
+            href="/contact"
+            className="font-medium text-[#cafd00] underline-offset-4 hover:underline"
+          >
+            Contact
           </Link>
-        </p>
-      </div>
+        )}{" "}
+        or{" "}
+        <a
+          href={`mailto:${contactEmail}`}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          email
+        </a>{" "}
+        ·{" "}
+        <Link
+          href="/services"
+          className={cn(buttonVariants({ variant: "link" }), "h-auto p-0")}
+        >
+          Services
+        </Link>
+      </p>
     </div>
   );
 }

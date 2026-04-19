@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/shared/site-footer";
-import { SiteHeader } from "@/components/shared/site-header";
+import { SiteHeader, type HeaderAuth } from "@/components/shared/site-header";
+import { prisma } from "@/lib/prisma";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 type PageShellProps = {
@@ -11,10 +13,39 @@ type PageShellProps = {
   fullBleed?: boolean;
 };
 
-export function PageShell({ children, className, fullBleed }: PageShellProps) {
+async function readHeaderAuth(): Promise<HeaderAuth | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const profile = await prisma.profile
+      .findUnique({
+        where: { id: user.id },
+        select: { creditsBalance: true },
+      })
+      .catch(() => null);
+    return {
+      email: user.email ?? "",
+      creditsBalance: profile?.creditsBalance ?? 0,
+    };
+  } catch {
+    // Supabase or DB not configured yet — render signed-out header.
+    return null;
+  }
+}
+
+export async function PageShell({
+  children,
+  className,
+  fullBleed,
+}: PageShellProps) {
+  const auth = await readHeaderAuth();
+
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader auth={auth} />
       <main
         className={cn(
           "relative w-full flex-1",
