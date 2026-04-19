@@ -29,6 +29,54 @@ function createPrismaClient() {
     );
   }
 
+  // #region agent log
+  try {
+    const parsed = (() => {
+      try {
+        const u = new URL(url);
+        return {
+          protocol: u.protocol,
+          hostname: u.hostname,
+          port: u.port,
+          pathname: u.pathname,
+          hasPgbouncer: u.searchParams.has("pgbouncer"),
+          leadingQuote: url.startsWith('"') || url.startsWith("'"),
+          trailingQuote: url.endsWith('"') || url.endsWith("'"),
+          hasBrackets: url.includes("["),
+          length: url.length,
+        };
+      } catch {
+        return { parseError: true, length: url.length };
+      }
+    })();
+    fetch(
+      "http://127.0.0.1:7597/ingest/0713d568-669d-4c56-8119-14d5e787208a",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Debug-Session-Id": "ad1c0a",
+        },
+        body: JSON.stringify({
+          sessionId: "ad1c0a",
+          hypothesisId: "H1,H2,H3",
+          location: "src/lib/prisma.ts:createPrismaClient",
+          message: "DATABASE_URL parse check",
+          data: {
+            parsed,
+            nodeEnv: process.env.NODE_ENV ?? null,
+            vercelEnv: process.env.VERCEL_ENV ?? null,
+            vercelRegion: process.env.VERCEL_REGION ?? null,
+          },
+          timestamp: Date.now(),
+        }),
+      },
+    ).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+  // #endregion
+
   // Serverless-friendly pg pool config:
   // - max: 1 — every Vercel function instance gets its own pool, so a single
   //   connection per instance avoids thrashing pgBouncer.

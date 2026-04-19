@@ -42,7 +42,51 @@ export async function GET(request: Request) {
       ? "set"
       : "missing",
     NODE_ENV: process.env.NODE_ENV ?? "(unset)",
+    VERCEL_ENV: process.env.VERCEL_ENV ?? "(unset)",
+    VERCEL_REGION: process.env.VERCEL_REGION ?? "(unset)",
   };
+
+  // #region agent log — Parse DATABASE_URL shape so we can diagnose H1/H2/H3
+  // without ever returning the password. Only structural facts.
+  const rawUrl = process.env.DATABASE_URL ?? "";
+  const urlShape = (() => {
+    const leadingQuote = rawUrl.startsWith('"') || rawUrl.startsWith("'");
+    const trailingQuote = rawUrl.endsWith('"') || rawUrl.endsWith("'");
+    const hasBrackets = rawUrl.includes("[") || rawUrl.includes("]");
+    const hasWhitespace = /\s/.test(rawUrl);
+    try {
+      const u = new URL(rawUrl);
+      return {
+        parseOk: true,
+        protocol: u.protocol,
+        hostname: u.hostname,
+        port: u.port,
+        pathname: u.pathname,
+        params: Array.from(u.searchParams.keys()),
+        passwordEncoded:
+          u.password !== decodeURIComponent(u.password).replace(/[^\s]/g, (c) =>
+            c,
+          ),
+        usernameHasAt: u.username.includes("@"),
+        leadingQuote,
+        trailingQuote,
+        hasBrackets,
+        hasWhitespace,
+        length: rawUrl.length,
+      };
+    } catch (e) {
+      return {
+        parseOk: false,
+        error: e instanceof Error ? e.message : String(e),
+        leadingQuote,
+        trailingQuote,
+        hasBrackets,
+        hasWhitespace,
+        length: rawUrl.length,
+      };
+    }
+  })();
+  // #endregion
 
   // Round-trip a trivial query to prove the connection works at all.
   let db: Record<string, unknown>;
@@ -82,6 +126,7 @@ export async function GET(request: Request) {
     {
       ok: allOk,
       env,
+      urlShape,
       db,
       schema,
       counts,
@@ -91,11 +136,17 @@ export async function GET(request: Request) {
   );
 }
 
-function errorShape(e: unknown): { name: string; message: string; code?: string } {
+function errorShape(e: unknown): {
+  name: string;
+  message: string;
+  code?: string;
+  meta?: unknown;
+} {
   if (e instanceof Error) {
     const maybeCode = (e as unknown as { code?: unknown }).code;
+    const maybeMeta = (e as unknown as { meta?: unknown }).meta;
     const code = typeof maybeCode === "string" ? maybeCode : undefined;
-    return { name: e.name, message: e.message, code };
+    return { name: e.name, message: e.message, code, meta: maybeMeta };
   }
   return { name: "Unknown", message: String(e) };
 }
