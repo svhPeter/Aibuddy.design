@@ -7,7 +7,11 @@ import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { ensureProfileSafe, type ProfileRow } from "@/lib/profile";
+import {
+  ensureProfileSafe,
+  getLastEnsureProfileError,
+  type ProfileRow,
+} from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +57,8 @@ export default async function AccountPage() {
   const profile = await ensureProfileSafe(user);
 
   if (!profile) {
+    const lastError = getLastEnsureProfileError();
+    const showDebug = Boolean(process.env.DEBUG_TOKEN) && lastError;
     return (
       <PageShell>
         <PageHeading
@@ -91,6 +97,14 @@ export default async function AccountPage() {
                 </Button>
               </form>
             </div>
+            {showDebug && lastError ? (
+              <pre className="mt-5 overflow-x-auto rounded-md bg-black/40 p-4 text-xs text-foreground/80">
+                {`[DEBUG — visible because DEBUG_TOKEN is set]
+at:      ${lastError.at}
+code:    ${lastError.code ?? "(none)"}
+message: ${lastError.message}`}
+              </pre>
+            ) : null}
           </div>
         </MarketingSection>
       </PageShell>

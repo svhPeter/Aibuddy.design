@@ -99,10 +99,29 @@ export async function ensureProfile(user: User): Promise<ProfileRow> {
   });
 }
 
+/** Last error raised inside `ensureProfileSafe`. Read by /account fallback
+ *  and /api/health/db so admins can diagnose without re-running the call. */
+let lastEnsureProfileError: { at: string; message: string; code?: string } | null =
+  null;
+
+export function getLastEnsureProfileError() {
+  return lastEnsureProfileError;
+}
+
+function describeError(e: unknown): { message: string; code?: string } {
+  if (e instanceof Error) {
+    const maybeCode = (e as unknown as { code?: unknown }).code;
+    const code = typeof maybeCode === "string" ? maybeCode : undefined;
+    return { message: e.message, code };
+  }
+  return { message: String(e) };
+}
+
 /**
  * Same as `ensureProfile`, but never throws. Returns `null` if the bootstrap
  * fails (DB unreachable, schema missing, etc.) so callers can render a
- * friendly fallback instead of a 500.
+ * friendly fallback instead of a 500. The full error is logged to the server
+ * with a stable prefix so it's easy to grep in Vercel function logs.
  */
 export async function ensureProfileSafe(
   user: User,
@@ -110,7 +129,15 @@ export async function ensureProfileSafe(
   try {
     return await ensureProfile(user);
   } catch (e) {
-    console.error("[ensureProfile] failed for user", user.id, ":", e);
+    const { message, code } = describeError(e);
+    lastEnsureProfileError = { at: new Date().toISOString(), message, code };
+    // Log the full error (including stack and Prisma meta) so the real cause
+    // is visible in Vercel function logs.
+    console.error(
+      "[ensureProfile] FAILED",
+      JSON.stringify({ userId: user.id, code, message }),
+    );
+    if (e instanceof Error && e.stack) console.error(e.stack);
     return null;
   }
 }
