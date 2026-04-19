@@ -7,7 +7,7 @@ import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { ensureProfile } from "@/lib/profile";
+import { ensureProfileSafe, type ProfileRow } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: "Account",
   description: "Your AIBuddy account, credits, and recent activity.",
 };
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const TOOL_LABELS: Record<string, string> = {
   "image-to-prompt": "Image to Prompt",
@@ -30,6 +33,14 @@ function formatDate(d: Date): string {
   }).format(d);
 }
 
+type UsageRow = {
+  id: string;
+  tool: string;
+  status: string;
+  creditsSpent: number;
+  createdAt: Date;
+};
+
 export default async function AccountPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -37,23 +48,83 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in?next=/account");
 
-  // Defensive: if a signed-in user somehow lacks a Profile row (callback
-  // failed, DB was wiped, etc.), create one now.
-  const profile = await ensureProfile(user);
+  // Bootstrap or fetch the profile. Never throws — so /account never 500s on
+  // a transient DB hiccup or a half-set-up environment.
+  const profile = await ensureProfileSafe(user);
 
-  const usage = await prisma.usageLog.findMany({
-    where: { profileId: profile.id },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    select: {
-      id: true,
-      tool: true,
-      status: true,
-      creditsSpent: true,
-      createdAt: true,
-    },
-  });
+  if (!profile) {
+    return (
+      <PageShell>
+        <PageHeading
+          eyebrow="Account"
+          title={user.email ?? "Your account"}
+          description="We're setting things up."
+        />
+        <MarketingSection>
+          <div className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-6 shadow-sm">
+            <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-destructive">
+              Couldn&apos;t load your account
+            </h2>
+            <p className="mt-3 text-sm text-foreground/90">
+              You&apos;re signed in, but we couldn&apos;t reach the database to
+              load your credits. This is usually temporary — refresh in a
+              moment, or sign out and back in.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/account"
+                className={cn(
+                  buttonVariants({ size: "sm" }),
+                  "rounded-none bg-[#cafd00] font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]",
+                )}
+              >
+                Refresh
+              </Link>
+              <form action="/auth/sign-out" method="post">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-none"
+                >
+                  Sign out
+                </Button>
+              </form>
+            </div>
+          </div>
+        </MarketingSection>
+      </PageShell>
+    );
+  }
 
+  const usage: UsageRow[] = await prisma.usageLog
+    .findMany({
+      where: { profileId: profile.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        tool: true,
+        status: true,
+        creditsSpent: true,
+        createdAt: true,
+      },
+    })
+    .catch((e) => {
+      console.error("[account] usage lookup failed:", e);
+      return [];
+    });
+
+  return <AccountView profile={profile} usage={usage} />;
+}
+
+function AccountView({
+  profile,
+  usage,
+}: {
+  profile: ProfileRow;
+  usage: UsageRow[];
+}) {
   return (
     <PageShell>
       <PageHeading

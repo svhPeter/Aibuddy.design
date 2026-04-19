@@ -6,6 +6,7 @@ import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
 import { getWhatsAppContactHref, siteConfig } from "@/config/site";
 import { prisma } from "@/lib/prisma";
+import { ensureProfileSafe } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
   description:
     "Turn any reference image into ready-to-use prompts for AI image tools — a short prompt, a detailed prompt, optional negatives, and tags.",
 };
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 async function readToolAuth(): Promise<{
   isAuthenticated: boolean;
@@ -24,17 +28,32 @@ async function readToolAuth(): Promise<{
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return { isAuthenticated: false, creditsBalance: 0 };
-    const profile = await prisma.profile
+
+    const existing = await prisma.profile
       .findUnique({
         where: { id: user.id },
         select: { creditsBalance: true },
       })
-      .catch(() => null);
+      .catch((e) => {
+        console.error("[image-to-prompt page] profile lookup failed:", e);
+        return null;
+      });
+    if (existing) {
+      return {
+        isAuthenticated: true,
+        creditsBalance: existing.creditsBalance,
+      };
+    }
+
+    // First-time visit after sign-in: bootstrap so the user gets their
+    // welcome credits before clicking generate.
+    const created = await ensureProfileSafe(user);
     return {
       isAuthenticated: true,
-      creditsBalance: profile?.creditsBalance ?? 0,
+      creditsBalance: created?.creditsBalance ?? 0,
     };
-  } catch {
+  } catch (e) {
+    console.error("[image-to-prompt page] readToolAuth failed:", e);
     return { isAuthenticated: false, creditsBalance: 0 };
   }
 }

@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 
 export type HeaderAuth = {
   email: string;
-  creditsBalance: number;
+  /** `null` means signed in but profile/credits couldn't be read yet — show "Account" without a count. */
+  creditsBalance: number | null;
 };
 
 type SiteHeaderProps = {
@@ -30,9 +31,11 @@ const linkBase =
 
 export function SiteHeader({ auth }: SiteHeaderProps) {
   const pathname = usePathname();
-  const accountLabel = auth
-    ? `Account · ${auth.creditsBalance}`
-    : "Sign in";
+  const accountLabel = !auth
+    ? "Sign in"
+    : auth.creditsBalance == null
+      ? "Account"
+      : `Account · ${auth.creditsBalance}`;
   const accountHref = auth ? "/account" : "/sign-in";
 
   return (

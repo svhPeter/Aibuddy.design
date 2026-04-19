@@ -7,6 +7,7 @@ import {
 } from "@/lib/gemini-image-prompt";
 import { InsufficientCreditsError, spendCredit } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
+import { ensureProfileSafe } from "@/lib/profile";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limiter";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateImagePromptFile } from "@/lib/validate-image-prompt-file";
@@ -45,10 +46,22 @@ export async function POST(request: Request) {
   }
 
   // Credits gate — check balance up front for a friendly error.
-  const profile = await prisma.profile.findUnique({
-    where: { id: user.id },
-    select: { creditsBalance: true },
-  });
+  // Bootstrap the profile if it's missing so first-time users still get
+  // their welcome credits (covers the case where the auth callback's
+  // ensureProfile failed silently).
+  let profile = await prisma.profile
+    .findUnique({
+      where: { id: user.id },
+      select: { creditsBalance: true },
+    })
+    .catch((e) => {
+      console.error("[image-to-prompt api] profile lookup failed:", e);
+      return null;
+    });
+  if (!profile) {
+    const created = await ensureProfileSafe(user);
+    profile = created ? { creditsBalance: created.creditsBalance } : null;
+  }
   const creditsBalance = profile?.creditsBalance ?? 0;
   if (creditsBalance <= 0) {
     return NextResponse.json(
