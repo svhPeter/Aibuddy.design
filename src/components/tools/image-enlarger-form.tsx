@@ -38,19 +38,19 @@ type DownloadFormat = "image/png" | "image/webp";
 
 type CompareProps = {
   originalSrc: string;
-  upscaledSrc: string;
+  enlargedSrc: string;
   outputWidth: number;
   outputHeight: number;
   labelId: string;
 };
 
 /**
- * Left = original (top layer, clipped). Right = upscaled (full layer below).
+ * Left = original (top layer, clipped). Right = enlarged output (layer below).
  * Vertical divider; position is % from left (0–100), default ~50.
  */
-function UpscaleCompareSlider({
+function EnlargeCompareSlider({
   originalSrc,
-  upscaledSrc,
+  enlargedSrc,
   outputWidth,
   outputHeight,
   labelId,
@@ -111,8 +111,8 @@ function UpscaleCompareSlider({
   return (
     <div className="space-y-3">
       <p id={labelId} className="text-xs text-muted-foreground">
-        Drag the divider or use arrow keys when the handle is focused. Left: original
-        · right: upscaled (matched aspect ratio).
+        Drag the divider or use arrow keys when the handle is focused. Left:
+        original · right: enlarged (matched aspect ratio).
       </p>
       <div
         ref={wrapRef}
@@ -127,10 +127,10 @@ function UpscaleCompareSlider({
         onPointerDown={beginDrag}
         role="presentation"
       >
-        {/* Upscaled — full frame */}
+        {/* Enlarged output — full frame */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={upscaledSrc}
+          src={enlargedSrc}
           alt=""
           className="pointer-events-none absolute inset-0 h-full w-full object-contain"
           draggable={false}
@@ -155,7 +155,7 @@ function UpscaleCompareSlider({
           className="pointer-events-none absolute right-2 top-2 z-[5] rounded border border-[#262626]/80 bg-[#0e0e0e]/90 px-2 py-1 font-heading text-[0.65rem] font-bold uppercase tracking-widest text-[#cafd00]"
           aria-hidden
         >
-          Upscaled
+          Enlarged
         </span>
 
         <div
@@ -169,7 +169,7 @@ function UpscaleCompareSlider({
             aria-valuemax={100}
             aria-valuenow={Math.round(pos)}
             aria-labelledby={labelId}
-            aria-label="Compare original and upscaled image"
+            aria-label="Compare original and enlarged image"
             tabIndex={0}
             className={cn(
               "pointer-events-auto absolute top-1/2 flex h-12 w-8 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-sm border-2 border-[#cafd00] bg-[#0e0e0e] text-[#cafd00] shadow-md outline-none ring-offset-2 ring-offset-[#0e0e0e] focus-visible:ring-2 focus-visible:ring-[#cafd00]",
@@ -190,7 +190,7 @@ function UpscaleCompareSlider({
   );
 }
 
-async function upscaleToBitmap(
+async function enlargeToBitmap(
   source: ImageBitmap,
   scale: Scale,
 ): Promise<ImageBitmap> {
@@ -220,7 +220,7 @@ async function upscaleToBitmap(
   }
 }
 
-export function ImageUpscalerForm() {
+export function ImageEnlargerForm() {
   const inputId = useId();
   const compareLabelId = `${inputId}-compare`;
   const fileRef = useRef<HTMLInputElement>(null);
@@ -279,7 +279,7 @@ export function ImageUpscalerForm() {
     [previewUrl, resultUrl],
   );
 
-  const runUpscale = useCallback(async () => {
+  const runEnlarge = useCallback(async () => {
     if (!file) return;
     setError(null);
     setPhase("working");
@@ -298,7 +298,7 @@ export function ImageUpscalerForm() {
           `Longest side must be at most ${MAX_INPUT_LONG_EDGE}px for this browser tool.`,
         );
       }
-      scaled = await upscaleToBitmap(src, scale);
+      scaled = await enlargeToBitmap(src, scale);
       src.close?.();
       src = null;
 
@@ -333,7 +333,7 @@ export function ImageUpscalerForm() {
       if (src) src.close?.();
       if (scaled) scaled.close?.();
       setPhase("idle");
-      setError(e instanceof Error ? e.message : "Upscale failed.");
+      setError(e instanceof Error ? e.message : "Could not enlarge image.");
     }
   }, [file, scale, downloadFormat, resultUrl]);
 
@@ -367,11 +367,13 @@ export function ImageUpscalerForm() {
           What this does
         </p>
         <p className="mt-2">
-          This is <strong className="text-foreground">high-quality resampling</strong>{" "}
-          (larger canvas, smooth pixels) — not generative AI. It will not invent skin
-          pores, text, or missing detail; it makes a sharper-looking larger export for
-          screens or print layouts where you already have enough resolution to work
-          with.
+          <strong className="text-foreground">Enlarge images with clean browser-side processing</strong>
+          {" "}— increase width and height for web, social, and product use. Fast, private
+          enlargement runs entirely in your browser: nothing is uploaded to a server.
+        </p>
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground/95">
+          This tool enlarges images cleanly in-browser. It increases size but does not
+          invent missing detail like heavy AI restoration tools.
         </p>
       </div>
 
@@ -507,15 +509,15 @@ export function ImageUpscalerForm() {
             size="lg"
             disabled={phase === "working"}
             className="rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]"
-            onClick={() => void runUpscale()}
+            onClick={() => void runEnlarge()}
           >
             {phase === "working" ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                Upscaling…
+                Enlarging…
               </>
             ) : (
-              "Upscale"
+              "Enlarge image"
             )}
           </Button>
         </div>
@@ -539,10 +541,10 @@ export function ImageUpscalerForm() {
             Output size · {outMeta.w}×{outMeta.h}px · {formatBytes(resultBlob.size)}
           </p>
 
-          <UpscaleCompareSlider
+          <EnlargeCompareSlider
             key={resultUrl}
             originalSrc={previewUrl}
-            upscaledSrc={resultUrl}
+            enlargedSrc={resultUrl}
             outputWidth={outMeta.w}
             outputHeight={outMeta.h}
             labelId={compareLabelId}

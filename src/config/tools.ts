@@ -8,7 +8,7 @@ export type ToolAccess = "public" | "account";
 export type ToolCatalogEntry = {
   href:
     | "/tools/image-compressor"
-    | "/tools/image-upscaler"
+    | "/tools/image-enlarger"
     | "/tools/image-to-prompt";
   name: string;
   /** One line for cards / nav */
@@ -28,10 +28,10 @@ export const toolsCatalog: readonly ToolCatalogEntry[] = [
     badge: "Free",
   },
   {
-    href: "/tools/image-upscaler",
-    name: "Image Upscaler",
+    href: "/tools/image-enlarger",
+    name: "Image Enlarger",
     description:
-      "Enlarge images with high-quality resampling (2× and more) — runs locally, no AI hallucination of detail.",
+      "Increase image dimensions with clean in-browser processing — great for larger exports and resized assets. Fast and private.",
     access: "public",
     badge: "Free",
   },

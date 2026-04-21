@@ -8,6 +8,7 @@ src/
     tools/page.tsx
     tools/audio-to-text/page.tsx
     tools/image-compressor/page.tsx
+    tools/image-enlarger/page.tsx
     tools/image-upscaler/page.tsx
     tools/image-to-prompt/page.tsx
     demo/clinic/page.tsx
