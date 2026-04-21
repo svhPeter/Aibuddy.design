@@ -100,12 +100,12 @@ export async function GET(request: Request) {
     db = { status: "error", error: errorShape(e) };
   }
 
-  // Probe each app table individually so a missing-table error is obvious.
+  // Probe each mapped table with raw COUNT(*) (avoids PrismaClient delegate typing edge cases).
   const counts: Record<string, number | string> = {};
   const probes: Array<[string, () => Promise<number>]> = [
-    ["profiles", () => prisma.profile.count()],
-    ["usage_logs", () => prisma.usageLog.count()],
-    ["credit_transactions", () => prisma.creditTransaction.count()],
+    ["profiles", () => countTable(prisma, "profiles")],
+    ["usage_logs", () => countTable(prisma, "usage_logs")],
+    ["credit_transactions", () => countTable(prisma, "credit_transactions")],
   ];
   for (const [label, fn] of probes) {
     try {
@@ -136,6 +136,16 @@ export async function GET(request: Request) {
     },
     { status: allOk ? 200 : 500 },
   );
+}
+
+async function countTable(
+  client: typeof prisma,
+  table: "profiles" | "usage_logs" | "credit_transactions",
+): Promise<number> {
+  const rows = await client.$queryRawUnsafe<Array<{ c: bigint }>>(
+    `SELECT COUNT(*)::bigint AS c FROM ${table}`,
+  );
+  return Number(rows[0]?.c ?? 0);
 }
 
 function errorShape(e: unknown): {
