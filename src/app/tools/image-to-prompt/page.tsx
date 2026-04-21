@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ImageToPromptForm } from "@/components/tools/image-to-prompt-form";
+import { ToolCrossLinks } from "@/components/tools/tool-cross-links";
 import { MarketingSection } from "@/components/shared/marketing-section";
 import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
@@ -65,7 +66,7 @@ export default async function ImageToPromptPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool"
+        eyebrow="Tool · Account"
         title="Image to Prompt"
         description="Drop in a reference image. Get a short prompt, a detailed prompt, optional negatives, and tags you can paste straight into your favourite image generator."
       />
@@ -77,6 +78,10 @@ export default async function ImageToPromptPage() {
           isAuthenticated={isAuthenticated}
           creditsBalance={creditsBalance}
         />
+      </MarketingSection>
+
+      <MarketingSection className="mt-10 md:mt-12">
+        <ToolCrossLinks currentHref="/tools/image-to-prompt" />
       </MarketingSection>
     </PageShell>
   );

@@ -9,6 +9,8 @@ const paths = [
   { path: "/about", changeFrequency: "monthly" as const, priority: 0.8 },
   { path: "/contact", changeFrequency: "monthly" as const, priority: 0.9 },
   { path: "/tools", changeFrequency: "monthly" as const, priority: 0.65 },
+  { path: "/tools/image-compressor", changeFrequency: "monthly" as const, priority: 0.72 },
+  { path: "/tools/image-upscaler", changeFrequency: "monthly" as const, priority: 0.72 },
   { path: "/tools/image-to-prompt", changeFrequency: "monthly" as const, priority: 0.7 },
   { path: "/demo/clinic", changeFrequency: "yearly" as const, priority: 0.5 },
   { path: "/demo/real-estate", changeFrequency: "yearly" as const, priority: 0.5 },

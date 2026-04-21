@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "favicon:flatten": "node scripts/flatten-favicon.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -35,7 +36,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "png-to-ico": "^3.0.1",
     "prisma": "^7.7.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

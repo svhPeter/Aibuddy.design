@@ -7,52 +7,57 @@ import { MarketingSection } from "@/components/shared/marketing-section";
 import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
 import { buttonVariants } from "@/components/ui/button";
+import { toolsCatalog } from "@/config/tools";
 import { getWhatsAppContactHref, siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Tools",
   description:
-    "Public AIBuddy utilities — Image to Prompt turns a reference image into prompts for AI image generators.",
+    "AIBuddy tools — free browser utilities for images plus Image to Prompt for signed-in users with credits.",
 };
 
 export default function ToolsPage() {
   const whatsappHref = getWhatsAppContactHref();
+  const ordered = [...toolsCatalog].sort((a, b) => {
+    if (a.access === b.access) return 0;
+    return a.access === "public" ? -1 : 1;
+  });
 
   return (
     <PageShell>
       <PageHeading
         title="Tools"
-        description="One public utility for now — built for creators who work with AI image tools. Custom builds and integrations are available through the studio."
+        description="Free utilities run entirely in your browser. Image to Prompt is the studio tool — sign in and use credits for AI-generated prompts from a reference image."
       />
 
       <MarketingSection>
-        <ul className="grid list-none gap-6 p-0 sm:grid-cols-1">
-          <li>
-            <Link
-              href="/tools/image-to-prompt"
-              className={cn(
-                "group flex h-full flex-col overflow-hidden rounded-lg border-2 border-border bg-card p-8 shadow-sm transition-all duration-300",
-                "hover:border-primary/35 hover:shadow-md hover:shadow-primary/5",
-              )}
-            >
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#cafd00]">
-                Live
-              </span>
-              <span className="mt-3 font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                Image to Prompt
-              </span>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                Upload JPG, PNG, or WebP. Get a short prompt, a detailed prompt,
-                optional negatives, and tags — ready to paste into your favourite
-                image generator.
-              </p>
-              <span className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#cafd00] group-hover:underline">
-                Open tool
-                <ArrowUpRight className="size-4" aria-hidden />
-              </span>
-            </Link>
-          </li>
+        <ul className="grid list-none gap-6 p-0 md:grid-cols-2 lg:grid-cols-3">
+          {ordered.map((tool) => (
+            <li key={tool.href}>
+              <Link
+                href={tool.href}
+                className={cn(
+                  "group flex h-full flex-col overflow-hidden rounded-lg border-2 border-border bg-card p-8 shadow-sm transition-all duration-300",
+                  "hover:border-primary/35 hover:shadow-md hover:shadow-primary/5",
+                )}
+              >
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#cafd00]">
+                  {tool.badge}
+                </span>
+                <span className="mt-3 font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                  {tool.name}
+                </span>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                  {tool.description}
+                </p>
+                <span className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#cafd00] group-hover:underline">
+                  Open tool
+                  <ArrowUpRight className="size-4" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </MarketingSection>
 
