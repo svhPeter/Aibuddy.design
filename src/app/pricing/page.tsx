@@ -20,7 +20,7 @@ const plans = [
     features: [
       "25 utility uses / month",
       "5 AI uses / month",
-      "Browser tools + Bytez AI tools",
+      "Private browser tools + AI-powered tools",
     ],
   },
   {

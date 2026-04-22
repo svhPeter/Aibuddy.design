@@ -34,9 +34,7 @@ export function SiteHeader({ auth }: SiteHeaderProps) {
   const pathname = usePathname();
   const accountLabel = !auth
     ? "Sign in"
-    : auth.creditsBalance == null
-      ? "Account"
-      : `Account · ${auth.creditsBalance}`;
+    : "Account";
   const accountHref = auth ? "/account" : "/sign-in";
 
   return (

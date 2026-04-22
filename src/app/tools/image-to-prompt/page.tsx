@@ -48,7 +48,7 @@ export default async function ImageToPromptPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Account"
+        eyebrow="Tool · AI · Sign in required"
         title="Image to Prompt"
         description="Drop in a reference image. Get a short prompt, a detailed prompt, optional negatives, and tags you can paste straight into your favourite image generator."
       />

@@ -38,7 +38,7 @@ export default function WatermarkToolPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Browser"
+        eyebrow="Tool · Free · Private"
         title="Watermark Tool"
         description="Protect images with clean custom watermarks. Add text and an optional logo, tune opacity and placement, and download — processing stays on your device."
       />

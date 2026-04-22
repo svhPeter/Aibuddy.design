@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Tools",
   description:
-    "AIBuddy tools — free browser utilities for images plus Image to Prompt for signed-in users with credits.",
+    "AIBuddy tools — private browser utilities plus AI-powered tools with optional sign-in and monthly usage limits.",
 };
 
 export default function ToolsPage() {
@@ -28,7 +28,7 @@ export default function ToolsPage() {
     <PageShell>
       <PageHeading
         title="Tools"
-        description="Free utilities run entirely in your browser. Image to Prompt is the studio tool — sign in and use credits for AI-generated prompts from a reference image."
+        description="Private utilities run entirely in your browser. AI-powered tools may require signing in and are subject to monthly usage limits."
       />
 
       <MarketingSection>

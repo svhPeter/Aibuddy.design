@@ -129,7 +129,7 @@ const ENTRIES: readonly ToolRegistryEntry[] = [
     layer: "bytez",
     kind: "ai",
     access: "public",
-    badge: "Free",
+    badge: "AI",
     listedInCatalog: true,
     aiProvider: "bytez",
   },
@@ -142,7 +142,7 @@ const ENTRIES: readonly ToolRegistryEntry[] = [
     layer: "bytez",
     kind: "ai",
     access: "public",
-    badge: "Free",
+    badge: "AI",
     listedInCatalog: true,
     aiProvider: "bytez",
   },
@@ -155,7 +155,7 @@ const ENTRIES: readonly ToolRegistryEntry[] = [
     layer: "bytez",
     kind: "ai",
     access: "public",
-    badge: "Free",
+    badge: "AI",
     listedInCatalog: true,
     aiProvider: "bytez",
   },
@@ -168,7 +168,7 @@ const ENTRIES: readonly ToolRegistryEntry[] = [
     layer: "gemini",
     kind: "ai",
     access: "account",
-    badge: "Account",
+    badge: "Sign in required",
     listedInCatalog: true,
     creditToolKey: "image-to-prompt",
     aiProvider: "gemini",
@@ -227,12 +227,8 @@ export function getToolCrossLinks(
 
 /** Short line for “badge · runtime” in tool nav (browser vs AI provider). */
 export function toolRuntimeSubtitle(t: ToolCatalogEntry): string {
-  if (t.access === "public") {
-    if (t.layer === "browser") return "Browser";
-    if (t.layer === "bytez") return "Bytez";
-    return "Public";
-  }
-  if (t.aiProvider === "gemini") return "Gemini";
-  if (t.aiProvider === "bytez") return "Bytez";
-  return "Sign-in";
+  if (t.access === "account") return "Sign in required";
+  if (t.layer === "browser") return "Private · fast";
+  if (t.kind === "ai") return "AI-powered";
+  return "Included";
 }

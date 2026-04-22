@@ -5,6 +5,53 @@ import { GUEST_COOKIE_NAME } from "@/lib/access/quotas";
 
 const CALLBACK_PATH = "/auth/callback";
 
+function setSecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set(
+    "Permissions-Policy",
+    [
+      "camera=()",
+      "microphone=()",
+      "geolocation=()",
+      "payment=()",
+      "usb=()",
+      "interest-cohort=()",
+    ].join(", "),
+  );
+
+  if (process.env.NODE_ENV === "production") {
+    // Only enable HSTS in production to avoid breaking local HTTP dev.
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=15552000; includeSubDomains",
+    );
+  }
+
+  // Start in report-only mode so we can observe violations safely before enforcing.
+  // This CSP is intentionally permissive for network connections (https/wss) to
+  // avoid breaking Supabase auth, Google OAuth redirects, and future billing flows.
+  response.headers.set(
+    "Content-Security-Policy-Report-Only",
+    [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com",
+      "connect-src 'self' https: wss:",
+      "frame-src https://accounts.google.com",
+      "form-action 'self' https://accounts.google.com",
+      "upgrade-insecure-requests",
+      "report-uri /api/csp-report",
+    ].join("; "),
+  );
+}
+
 /**
  * Proxy middleware — two jobs:
  *
@@ -39,6 +86,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request });
+  setSecurityHeaders(response);
 
   const existingGuest = request.cookies.get(GUEST_COOKIE_NAME)?.value?.trim();
   if (!existingGuest || existingGuest.length < 8) {
@@ -48,6 +96,8 @@ export async function proxy(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 400,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
+      // Must be readable by the client to keep the guest identity stable when
+      // syncing cookie ↔ localStorage (usage enforcement remains server-side).
       httpOnly: false,
     });
   }

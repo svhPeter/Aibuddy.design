@@ -16,7 +16,7 @@ export default function ImageEnlargerPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free"
+        eyebrow="Tool · Free · Private"
         title="Image Enlarger"
         description="Increase image dimensions with clean in-browser processing — useful for larger exports and resized assets. Your files stay on your device."
       />

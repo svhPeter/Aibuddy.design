@@ -10,7 +10,7 @@ import { openGraphImageFields, twitterImageFields } from "@/config/seo";
 import { siteConfig } from "@/config/site";
 
 const description =
-  "Generate high-converting product copy fast — short and long descriptions, five feature bullets, and a CTA from name, category, tone, and keywords. Powered by Bytez.";
+  "Generate high-converting product copy fast — short and long descriptions, five feature bullets, and a CTA from name, category, tone, and keywords.";
 
 export const metadata: Metadata = {
   title: "Product Description Generator",
@@ -38,7 +38,7 @@ export default function ProductDescriptionGeneratorPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Bytez"
+        eyebrow="Tool · AI · Free"
         title="Product Description Generator"
         description="Generate high-converting product copy fast. Describe your product and category, choose a tone, add optional keywords and audience — get a short blurb, long sales copy, five bullets, and a CTA line with copy buttons."
       />
@@ -52,7 +52,7 @@ export default function ProductDescriptionGeneratorPage() {
           items={[
             {
               q: "Do I need an API key?",
-              a: "You don’t configure anything in the browser. The tool calls AIBuddy’s server, which uses our Bytez integration — same env setup as other Bytez tools.",
+              a: "No. The tool runs via AIBuddy’s server and is included with the product — you don’t need to configure anything.",
             },
             {
               q: "Can I use this copy verbatim?",

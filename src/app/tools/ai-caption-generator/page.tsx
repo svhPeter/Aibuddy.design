@@ -37,7 +37,7 @@ export default function AiCaptionGeneratorPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Bytez"
+        eyebrow="Tool · AI · Free"
         title="AI Caption Generator"
         description="Describe your niche, pick a tone and platform, and get five caption ideas plus a short CTA and hashtags — ready to copy into your scheduler."
       />

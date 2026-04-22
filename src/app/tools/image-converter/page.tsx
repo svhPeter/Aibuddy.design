@@ -38,7 +38,7 @@ export default function ImageConverterPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Browser"
+        eyebrow="Tool · Free · Private"
         title="Image Converter"
         description="Fast private image conversion in your browser. Pick JPG, PNG, or WebP output, keep pixel dimensions, and download instantly — no account and no server upload."
       />

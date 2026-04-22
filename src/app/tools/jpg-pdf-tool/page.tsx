@@ -38,7 +38,7 @@ export default function JpgPdfToolPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Browser"
+        eyebrow="Tool · Free · Private"
         title="JPG ↔ PDF"
         description="Convert images to PDF instantly — merge multiple images in order, or extract every page of a PDF to high-quality JPG files packaged in a zip. Nothing is uploaded to our servers."
       />

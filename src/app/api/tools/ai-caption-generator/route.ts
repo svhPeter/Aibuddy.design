@@ -111,7 +111,7 @@ export async function POST(request: Request) {
         {
           ok: false,
           error:
-            "Caption generation is not configured on this server. Please check back later.",
+            "This tool is temporarily unavailable. Please try again later.",
           code: "NOT_CONFIGURED",
         },
         { status: 503 },
@@ -121,12 +121,12 @@ export async function POST(request: Request) {
       const status = e.status >= 400 && e.status < 600 ? e.status : 502;
       const errorMessage =
         status === 429
-          ? "The AI service is busy. Please try again shortly."
+          ? "We're getting a lot of requests right now. Please try again in a moment."
           : status === 402
-            ? "AI credits are insufficient. Add credits in your Bytez dashboard and try again."
+            ? "This tool is temporarily unavailable. Please try again later."
             : status === 504
-              ? "The AI service took too long to respond. Try again."
-              : "Generation failed. Please try again.";
+              ? "That took longer than expected. Please try once more."
+              : "We couldn't generate a result this time. Please try again.";
       return NextResponse.json(
         { ok: false, error: errorMessage, code: "UPSTREAM_ERROR" },
         {

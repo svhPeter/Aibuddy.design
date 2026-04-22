@@ -38,7 +38,7 @@ export default function SocialResizePage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Browser"
+        eyebrow="Tool · Free · Private"
         title="Social Media Resize"
         description="Resize images perfectly for social platforms. Choose a preset, pick contain (letterbox), cover (crop), or stretch, then export JPG or PNG — all in your browser."
       />

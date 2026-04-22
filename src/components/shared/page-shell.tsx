@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { GuestIdSync } from "@/components/access/guest-id-sync";
+import { CookieNotice } from "@/components/shared/cookie-notice";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader, type HeaderAuth } from "@/components/shared/site-header";
 import { prisma } from "@/lib/prisma";
@@ -91,6 +92,7 @@ export async function PageShell({
       >
         {children}
       </main>
+      <CookieNotice />
       <SiteFooter />
     </div>
   );

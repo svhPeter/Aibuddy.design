@@ -16,7 +16,7 @@ export default function ImageCompressorPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free"
+        eyebrow="Tool · Free · Private"
         title="Image Compressor"
         description="Resize the file footprint while keeping the same pixel dimensions. Everything runs in your browser — no sign-in and no paid API keys."
       />

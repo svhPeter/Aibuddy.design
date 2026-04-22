@@ -10,7 +10,7 @@ import { openGraphImageFields, twitterImageFields } from "@/config/seo";
 import { siteConfig } from "@/config/site";
 
 const description =
-  "Turn simple prompts into polished AI-ready prompts — style targets for Midjourney, Flux, SDXL, and more, plus negatives and tags. Powered by Bytez.";
+  "Turn simple prompts into polished AI-ready prompts — style targets for Midjourney, Flux, SDXL, and more, plus negatives and tags.";
 
 export const metadata: Metadata = {
   title: "Prompt Enhancer",
@@ -38,7 +38,7 @@ export default function PromptEnhancerPage() {
   return (
     <PageShell>
       <PageHeading
-        eyebrow="Tool · Free · Bytez"
+        eyebrow="Tool · AI · Free"
         title="Prompt Enhancer"
         description="Turn simple prompts into polished AI-ready prompts. Pick a style target and creativity level — get an improved prompt, optional negatives, and tags with copy and regenerate actions."
       />
