@@ -26,26 +26,26 @@ export function HomeStitchHero({
   primaryVisual,
 }: HomeStitchHeroProps) {
   return (
-    <header className="relative flex min-h-[min(100dvh,960px)] items-start px-6 pt-32 pb-20 editorial-grid sm:px-10 md:min-h-screen md:items-center md:pt-36 md:pb-28">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-10 md:grid-cols-12 md:items-center md:gap-x-16 md:gap-y-12">
-        <div className="z-10 md:col-span-7">
+    <header className="relative flex min-h-[min(100dvh,960px)] items-start px-4 pt-28 pb-16 editorial-grid sm:px-6 sm:pt-32 sm:pb-20 md:min-h-screen md:items-center md:px-10 md:pt-36 md:pb-28">
+      <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 items-start gap-8 sm:gap-10 md:grid-cols-12 md:items-center md:gap-x-16 md:gap-y-12">
+        <div className="z-10 min-w-0 md:col-span-7">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#cafd00]">
             {siteConfig.name} · {studioIdentity.descriptor}
           </p>
-          <h1 className="font-stitch-display text-[clamp(2.875rem,9.2vw,8.5rem)] font-bold uppercase text-white">
+          <h1 className="font-stitch-display text-balance text-[clamp(1.875rem,calc(0.35rem+8vw),8.5rem)] font-bold uppercase leading-[0.92] text-white">
             Architecting <br />
             <span className="text-[#cafd00]">intelligence</span>
           </h1>
-          <p className="mt-7 max-w-lg text-base font-normal leading-relaxed text-white/75 sm:mt-9 sm:text-lg md:text-xl">
+          <p className="mt-6 max-w-lg text-base font-normal leading-relaxed text-white/75 sm:mt-9 sm:text-lg md:text-xl">
             Strategy, design, and implementation for websites, chatbots, and
             automation — honest scoping, shipped work, no inflated claims.
           </p>
-          <div className="mt-10 flex flex-col gap-4 sm:mt-12 sm:flex-row sm:gap-6">
+          <div className="mt-10 flex w-full max-w-xl flex-col gap-3 sm:mt-12 sm:flex-row sm:flex-wrap sm:gap-6">
             <Link
               href={primaryHref}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                "rounded-none px-10 py-6 font-heading text-sm font-bold uppercase tracking-widest hover:opacity-95",
+                "w-full justify-center rounded-none px-6 py-5 font-heading text-sm font-bold uppercase tracking-widest hover:opacity-95 sm:w-auto sm:min-w-[12rem] sm:px-10 sm:py-6",
                 primaryVisual === "whatsapp"
                   ? whatsappPrimaryClass
                   : "bg-[#cafd00] text-[#516700] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:bg-[#f3ffca]",
@@ -60,14 +60,14 @@ export function HomeStitchHero({
               href="/about"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "rounded-none border-2 border-[#777575] bg-transparent px-10 py-6 font-heading text-sm font-bold uppercase tracking-widest text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:border-[#adaaaa] hover:bg-[#201f1f]",
+                "w-full justify-center rounded-none border-2 border-[#777575] bg-transparent px-6 py-5 font-heading text-sm font-bold uppercase tracking-widest text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] hover:border-[#adaaaa] hover:bg-[#201f1f] sm:w-auto sm:min-w-[12rem] sm:px-10 sm:py-6",
               )}
             >
               Studio &amp; approach
             </Link>
           </div>
         </div>
-        <div className="relative aspect-square md:col-span-5">
+        <div className="relative aspect-square min-w-0 md:col-span-5">
           <div
             aria-hidden
             className="absolute inset-0 bg-[#cafd00]/[0.08]"

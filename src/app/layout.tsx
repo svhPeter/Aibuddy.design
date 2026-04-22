@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 
 import { openGraphImageFields, twitterImageFields } from "@/config/seo";
@@ -22,6 +22,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0e0e0e",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -72,7 +79,9 @@ export default function RootLayout({
       lang="en"
       className={`dark ${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className={`${inter.className} flex min-h-full flex-col overflow-x-hidden`}>
+      <body
+        className={`${inter.className} flex min-h-full min-w-0 flex-col overflow-x-hidden [scrollbar-gutter:stable]`}
+      >
         {children}
       </body>
     </html>

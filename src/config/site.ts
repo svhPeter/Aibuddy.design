@@ -1,4 +1,8 @@
+import pkg from "../../package.json";
+
 export const siteConfig = {
+  /** Release version — mirrors `package.json` for display and cache-busting hints. */
+  version: pkg.version,
   /** Primary product / site brand (UI, metadata titles). */
   name: "AIBuddy",
   /** Public domain — footer, email context, screen-reader disambiguation. */

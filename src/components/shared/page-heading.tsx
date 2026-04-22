@@ -21,7 +21,7 @@ export function PageHeading({
         <SectionLabel className="mb-1 block">{eyebrow}</SectionLabel>
       ) : null}
       <div className="space-y-4 border-l-2 border-primary pl-5 md:pl-6">
-        <h1 className="font-heading text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.85rem] md:leading-[1.06]">
+        <h1 className="font-heading text-balance text-[clamp(1.5rem,5.5vw,2.85rem)] font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.85rem] md:leading-[1.06]">
           {title}
         </h1>
         {description ? (

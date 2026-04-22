@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { getRegistryEntryById } from "@/config/tool-registry";
 import {
   GeminiImagePromptError,
   GeminiNotConfiguredError,
   generateImagePromptFromImage,
-} from "@/lib/gemini-image-prompt";
-import { InsufficientCreditsError, spendCredit } from "@/lib/credits";
-import { prisma } from "@/lib/prisma";
-import { ensureProfileSafe } from "@/lib/profile";
+} from "@/lib/ai";
+import { getAuthAndGuestKey } from "@/lib/access/request-context";
+import {
+  consumeToolUse,
+  httpStatusForDenied,
+  refundToolUse,
+} from "@/lib/access/usage";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limiter";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateImagePromptFile } from "@/lib/validate-image-prompt-file";
@@ -26,10 +30,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * a single VM, not as a hard ceiling in production at scale.
  */
 const LIMIT_PER_DAY = 15;
-const TOOL = "image-to-prompt";
+
+const registryEntry = getRegistryEntryById("image-to-prompt");
+const TOOL_ID = registryEntry?.id ?? "image-to-prompt";
 
 export async function POST(request: Request) {
-  // Auth gate — must be signed in to generate.
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -42,36 +47,6 @@ export async function POST(request: Request) {
         code: "UNAUTHENTICATED",
       },
       { status: 401 },
-    );
-  }
-
-  // Credits gate — check balance up front for a friendly error.
-  // Bootstrap the profile if it's missing so first-time users still get
-  // their welcome credits (covers the case where the auth callback's
-  // ensureProfile failed silently).
-  let profile = await prisma.profile
-    .findUnique({
-      where: { id: user.id },
-      select: { creditsBalance: true },
-    })
-    .catch((e) => {
-      console.error("[image-to-prompt api] profile lookup failed:", e);
-      return null;
-    });
-  if (!profile) {
-    const created = await ensureProfileSafe(user);
-    profile = created ? { creditsBalance: created.creditsBalance } : null;
-  }
-  const creditsBalance = profile?.creditsBalance ?? 0;
-  if (creditsBalance <= 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "You're out of credits. Paid credits are coming soon.",
-        code: "INSUFFICIENT_CREDITS",
-        creditsBalance,
-      },
-      { status: 402 },
     );
   }
 
@@ -89,7 +64,6 @@ export async function POST(request: Request) {
         error:
           "You've hit today's limit. Come back tomorrow, or get in touch if you need more.",
         code: "RATE_LIMIT",
-        creditsBalance,
       },
       {
         status: 429,
@@ -105,7 +79,6 @@ export async function POST(request: Request) {
         ok: false,
         error: "Expected multipart/form-data.",
         code: "BAD_REQUEST",
-        creditsBalance,
       },
       { status: 400 },
     );
@@ -120,7 +93,6 @@ export async function POST(request: Request) {
         ok: false,
         error: "Could not parse form data.",
         code: "BAD_REQUEST",
-        creditsBalance,
       },
       { status: 400 },
     );
@@ -133,7 +105,6 @@ export async function POST(request: Request) {
         ok: false,
         error: "Missing image file.",
         code: "MISSING_FILE",
-        creditsBalance,
       },
       { status: 400 },
     );
@@ -146,7 +117,6 @@ export async function POST(request: Request) {
         ok: false,
         error: validation.error,
         code: "INVALID_FILE",
-        creditsBalance,
       },
       { status: 400 },
     );
@@ -161,38 +131,38 @@ export async function POST(request: Request) {
         ok: false,
         error: "Could not read the file. Try a smaller image.",
         code: "READ_FAILED",
-        creditsBalance,
       },
       { status: 400 },
     );
   }
+
+  const { guestKey } = await getAuthAndGuestKey(request);
+  const gate = await consumeToolUse({
+    toolId: TOOL_ID,
+    user,
+    guestKey,
+  });
+  if (!gate.ok) {
+    return NextResponse.json(
+      { ok: false, error: gate.message, code: gate.code },
+      { status: httpStatusForDenied(gate.code) },
+    );
+  }
+  const snapshot = gate.snapshot;
 
   try {
     const result = await generateImagePromptFromImage(
       new Uint8Array(buffer),
       file.type.toLowerCase(),
     );
-    // Only deduct credits on successful generation.
-    let newBalance = creditsBalance;
-    try {
-      const spent = await spendCredit(user.id, TOOL);
-      newBalance = spent.creditsBalance;
-    } catch (e) {
-      if (e instanceof InsufficientCreditsError) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "You're out of credits. Paid credits are coming soon.",
-            code: "INSUFFICIENT_CREDITS",
-            creditsBalance: 0,
-          },
-          { status: 402 },
-        );
-      }
-      throw e;
-    }
-    return NextResponse.json({ ok: true, result, creditsBalance: newBalance });
+    return NextResponse.json({ ok: true, result });
   } catch (error) {
+    await refundToolUse({
+      toolId: TOOL_ID,
+      user,
+      guestKey,
+      snapshot,
+    });
     if (error instanceof GeminiNotConfiguredError) {
       console.error("[image-to-prompt] not configured:", error);
       return NextResponse.json(
@@ -200,7 +170,6 @@ export async function POST(request: Request) {
           ok: false,
           error: "This tool is temporarily unavailable. Please check back soon.",
           code: "NOT_CONFIGURED",
-          creditsBalance,
         },
         { status: 503 },
       );
@@ -216,7 +185,6 @@ export async function POST(request: Request) {
           ok: false,
           error: mapped.message,
           code: error.code,
-          creditsBalance,
         },
         { status: mapped.status },
       );
@@ -227,7 +195,6 @@ export async function POST(request: Request) {
         ok: false,
         error: "Something went wrong. Please try again.",
         code: "UNKNOWN",
-        creditsBalance,
       },
       { status: 500 },
     );

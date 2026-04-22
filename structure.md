@@ -8,12 +8,22 @@ src/
     tools/page.tsx
     tools/audio-to-text/page.tsx
     tools/image-compressor/page.tsx
+    tools/image-converter/page.tsx
     tools/image-enlarger/page.tsx
     tools/image-upscaler/page.tsx
     tools/image-to-prompt/page.tsx
+    tools/ai-caption-generator/page.tsx
+    tools/jpg-pdf-tool/page.tsx
+    tools/product-description-generator/page.tsx
+    tools/prompt-enhancer/page.tsx
+    tools/social-resize/page.tsx
+    tools/watermark-tool/page.tsx
     demo/clinic/page.tsx
     demo/real-estate/page.tsx
     api/tools/image-to-prompt/route.ts
+    api/tools/ai-caption-generator/route.ts
+    api/tools/product-description-generator/route.ts
+    api/tools/prompt-enhancer/route.ts
   components/
     shared/
     agency/
@@ -23,12 +33,23 @@ src/
     ui/
   lib/
     utils.ts
+    browser/format-bytes.ts
     rate-limiter.ts
+    tools/ai-caption-server.ts
+    tools/product-description-server.ts
+    tools/prompt-enhancer-server.ts
     validate-image-prompt-file.ts
     gemini-image-prompt.ts
+    ai/
+      index.ts
+      types.ts
+      providers/
+        gemini.ts
+        bytez.ts
   config/
     site.ts
     services.ts
     portfolio.ts
     seo.ts
+    tool-registry.ts
     tools.ts

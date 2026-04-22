@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, Copy, ImagePlus, Loader2 } from "lucide-react";
 
+import type { UsageStatusPayload } from "@/lib/access/usage";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,7 @@ function CopyBlock({ label, text, mono }: CopyBlockProps) {
   }
 
   return (
-    <div className="rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+    <div className="min-w-0 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
           {label}
@@ -72,8 +73,9 @@ function CopyBlock({ label, text, mono }: CopyBlockProps) {
       </div>
       <p
         className={cn(
-          "mt-4 text-sm leading-relaxed text-foreground/95",
-          mono && "font-mono text-[0.8125rem] leading-relaxed",
+          "mt-4 min-w-0 break-words text-sm leading-relaxed text-foreground/95",
+          mono &&
+            "max-h-64 overflow-x-auto overflow-y-auto whitespace-pre-wrap font-mono text-[0.8125rem] leading-relaxed [overflow-wrap:anywhere]",
         )}
       >
         {text.trim() || "—"}
@@ -86,14 +88,28 @@ type ImageToPromptFormProps = {
   whatsappHref: string | null;
   contactEmail: string;
   isAuthenticated: boolean;
-  creditsBalance: number;
+  usage: UsageStatusPayload | null;
 };
+
+function isAtAiLimit(usage: UsageStatusPayload | null): boolean {
+  if (!usage) return false;
+  if (usage.tier === "guest") return false;
+  return usage.ai.used >= usage.ai.limit;
+}
+
+function formatUsageLine(usage: UsageStatusPayload | null): string | null {
+  if (!usage || usage.tier === "guest") return null;
+  if (usage.tier === "free") {
+    return `AI uses this month: ${usage.ai.used} / ${usage.ai.limit}`;
+  }
+  return `Pro · AI uses: ${usage.ai.used} / ${usage.ai.limit}`;
+}
 
 export function ImageToPromptForm({
   whatsappHref,
   contactEmail,
   isAuthenticated,
-  creditsBalance: initialCredits,
+  usage,
 }: ImageToPromptFormProps) {
   const inputId = useId();
   const pathname = usePathname();
@@ -103,9 +119,8 @@ export function ImageToPromptForm({
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ResultPayload | null>(null);
-  const [credits, setCredits] = useState<number>(initialCredits);
 
-  const canGenerate = isAuthenticated && credits > 0;
+  const canGenerate = isAuthenticated && !isAtAiLimit(usage);
 
   // Revoke the blob: URL when it is replaced or when the component unmounts.
   useEffect(() => {
@@ -152,7 +167,6 @@ export function ImageToPromptForm({
         error?: string;
         code?: string;
         result?: ResultPayload;
-        creditsBalance?: number;
       };
 
       if (!res.ok || !payload.ok) {
@@ -161,18 +175,12 @@ export function ImageToPromptForm({
             ? payload.error
             : "Something went wrong.",
         );
-        if (typeof payload.creditsBalance === "number") {
-          setCredits(payload.creditsBalance);
-        }
         setPhase("idle");
         return;
       }
 
       if (payload.result) {
         setResult(payload.result);
-        if (typeof payload.creditsBalance === "number") {
-          setCredits(payload.creditsBalance);
-        }
         setPhase("done");
       } else {
         setError("Unexpected response.");
@@ -203,20 +211,20 @@ export function ImageToPromptForm({
   if (!isAuthenticated) {
     const next = pathname || "/tools/image-to-prompt";
     return (
-      <div className="space-y-8">
-        <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="min-w-0 space-y-8">
+        <div className="rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-8">
           <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
             Sign in to generate
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            New accounts get 5 free credits. One credit covers one image.
+            Sign in for a free account with monthly AI usage for this tool.
           </p>
           <div className="mt-5">
             <Link
               href={`/sign-in?next=${encodeURIComponent(next)}`}
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]",
+                "inline-flex w-full justify-center rounded-none bg-[#cafd00] px-6 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca] sm:w-auto sm:px-8",
               )}
             >
               Sign in with Google
@@ -231,32 +239,40 @@ export function ImageToPromptForm({
     );
   }
 
-  // Signed-in but out of credits.
-  if (credits <= 0) {
+  if (isAuthenticated && isAtAiLimit(usage)) {
     return (
-      <div className="space-y-8">
-        <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="min-w-0 space-y-8">
+        <div className="rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-8">
           <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
-            You&apos;re out of credits
+            Monthly AI limit reached
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You&apos;ve used your free credits. Paid credits are coming soon —
-            reach out if you need more right now.
+          <p className="mt-2 text-pretty text-sm text-muted-foreground">
+            You&apos;ve used your monthly allowance. Upgrade to Pro coming
+            soon.
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               type="button"
               size="lg"
               disabled
-              className="rounded-none bg-[#cafd00]/40 font-heading text-xs font-bold uppercase tracking-widest text-[#516700]/60"
+              className="w-full rounded-none bg-[#cafd00]/40 font-heading text-xs font-bold uppercase tracking-widest text-[#516700]/60 sm:w-auto"
             >
-              Buy credits (coming soon)
+              Upgrade (coming soon)
             </Button>
+            <Link
+              href="/pricing"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex w-full justify-center rounded-none sm:w-auto",
+              )}
+            >
+              Pricing
+            </Link>
             <Link
               href="/account"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "rounded-none",
+                "inline-flex w-full justify-center rounded-none sm:w-auto",
               )}
             >
               Account
@@ -272,11 +288,11 @@ export function ImageToPromptForm({
   }
 
   return (
-    <div className="space-y-10">
+    <div className="min-w-0 space-y-10">
       <form onSubmit={onSubmit} className="space-y-6">
         <div
           className={cn(
-            "relative cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] p-8 text-center transition-colors hover:border-[#cafd00]/45",
+            "relative min-h-[10.5rem] cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] px-4 py-6 text-center transition-colors hover:border-[#cafd00]/45 sm:min-h-0 sm:p-8",
             phase === "loading" && "pointer-events-none opacity-60",
           )}
           onClick={() => fileRef.current?.click()}
@@ -311,13 +327,13 @@ export function ImageToPromptForm({
         </div>
 
         {previewUrl && file ? (
-          <div className="overflow-hidden rounded-lg border-2 border-border bg-black/40 p-4">
-            <div className="relative mx-auto max-h-72 w-full max-w-lg">
+          <div className="min-w-0 overflow-hidden rounded-lg border-2 border-border bg-black/40 p-3 sm:p-4">
+            <div className="relative mx-auto max-h-[min(50vh,18rem)] w-full max-w-lg sm:max-h-72">
               {/* eslint-disable-next-line @next/next/no-img-element -- blob: preview URL */}
               <img
                 src={previewUrl}
                 alt="Selected upload preview"
-                className="mx-auto max-h-72 w-auto object-contain"
+                className="mx-auto max-h-[min(50vh,18rem)] w-auto max-w-full object-contain sm:max-h-72"
               />
             </div>
             <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -338,12 +354,12 @@ export function ImageToPromptForm({
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <Button
             type="submit"
             disabled={!file || phase === "loading" || !canGenerate}
             size="lg"
-            className="rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]"
+            className="w-full justify-center rounded-none bg-[#cafd00] px-6 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca] sm:w-auto sm:px-8"
           >
             {phase === "loading" ? (
               <>
@@ -354,9 +370,11 @@ export function ImageToPromptForm({
               "Generate prompts"
             )}
           </Button>
-          <p className="text-xs text-muted-foreground">
-            Credits remaining: <span className="font-semibold text-foreground">{credits}</span> · 1 credit per image.
-          </p>
+          {formatUsageLine(usage) ? (
+            <p className="text-balance text-center text-xs text-muted-foreground sm:text-left">
+              {formatUsageLine(usage)}
+            </p>
+          ) : null}
         </div>
 
         {error ? (
@@ -370,7 +388,7 @@ export function ImageToPromptForm({
       </form>
 
       {result && phase === "done" ? (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <CopyBlock label="Short prompt" text={result.shortPrompt} />
           <CopyBlock
             label="Detailed prompt"
@@ -383,15 +401,15 @@ export function ImageToPromptForm({
               mono
             />
           ) : null}
-          <div className="rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+          <div className="min-w-0 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
             <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
               Tags
             </h3>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex min-w-0 flex-wrap gap-2">
               {result.quickTags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-none border border-border bg-background/80 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                  className="max-w-full break-words rounded-none border border-border bg-background/80 px-3 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
                 >
                   {tag}
                 </span>
@@ -417,9 +435,9 @@ export function ImageToPromptForm({
               variant="outline"
               size="sm"
               className="rounded-none"
-              disabled={!file || credits <= 0}
+              disabled={!file || !canGenerate}
               onClick={() => {
-                if (file && credits > 0) void generate(file);
+                if (file && canGenerate) void generate(file);
               }}
             >
               Generate again
@@ -440,8 +458,8 @@ type ContactFooterProps = {
 
 function ContactFooter({ whatsappHref, contactEmail }: ContactFooterProps) {
   return (
-    <div className="border-t border-border pt-8">
-      <p className="text-sm text-muted-foreground">
+    <div className="min-w-0 border-t border-border pt-8">
+      <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
         Need something custom-built?{" "}
         {whatsappHref ? (
           <a

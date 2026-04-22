@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Download, GripVertical, ImagePlus, Loader2 } from "lucide-react";
 
+import { postUsageConsume } from "@/lib/access/client-consume";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -109,20 +110,20 @@ function EnlargeCompareSlider({
   const clipOriginal = `inset(0 ${100 - pos}% 0 0)`;
 
   return (
-    <div className="space-y-3">
-      <p id={labelId} className="text-xs text-muted-foreground">
+    <div className="min-w-0 space-y-3">
+      <p id={labelId} className="text-balance text-xs text-muted-foreground sm:text-left">
         Drag the divider or use arrow keys when the handle is focused. Left:
         original · right: enlarged (matched aspect ratio).
       </p>
       <div
         ref={wrapRef}
         className={cn(
-          "relative mx-auto w-full max-w-4xl overflow-hidden rounded-md border border-[#262626] bg-[#0e0e0e] shadow-inner",
+          "relative mx-auto w-full min-w-0 max-w-4xl overflow-hidden rounded-md border border-[#262626] bg-[#0e0e0e] shadow-inner",
           dragging && "cursor-ew-resize touch-none select-none",
         )}
         style={{
           aspectRatio: `${outputWidth} / ${outputHeight}`,
-          maxHeight: "min(70vh, 28rem)",
+          maxHeight: "min(65vh, 28rem, 85vw)",
         }}
         onPointerDown={beginDrag}
         role="presentation"
@@ -146,13 +147,13 @@ function EnlargeCompareSlider({
         />
 
         <span
-          className="pointer-events-none absolute left-2 top-2 z-[5] rounded border border-[#262626]/80 bg-[#0e0e0e]/90 px-2 py-1 font-heading text-[0.65rem] font-bold uppercase tracking-widest text-stitch-muted"
+          className="pointer-events-none absolute left-1.5 top-1.5 z-[5] max-w-[42%] truncate rounded border border-[#262626]/80 bg-[#0e0e0e]/90 px-1.5 py-0.5 font-heading text-[0.6rem] font-bold uppercase tracking-widest text-stitch-muted sm:left-2 sm:top-2 sm:max-w-none sm:px-2 sm:py-1 sm:text-[0.65rem]"
           aria-hidden
         >
           Original
         </span>
         <span
-          className="pointer-events-none absolute right-2 top-2 z-[5] rounded border border-[#262626]/80 bg-[#0e0e0e]/90 px-2 py-1 font-heading text-[0.65rem] font-bold uppercase tracking-widest text-[#cafd00]"
+          className="pointer-events-none absolute right-1.5 top-1.5 z-[5] max-w-[42%] truncate rounded border border-[#262626]/80 bg-[#0e0e0e]/90 px-1.5 py-0.5 font-heading text-[0.6rem] font-bold uppercase tracking-widest text-[#cafd00] sm:right-2 sm:top-2 sm:max-w-none sm:px-2 sm:py-1 sm:text-[0.65rem]"
           aria-hidden
         >
           Enlarged
@@ -172,7 +173,7 @@ function EnlargeCompareSlider({
             aria-label="Compare original and enlarged image"
             tabIndex={0}
             className={cn(
-              "pointer-events-auto absolute top-1/2 flex h-12 w-8 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-sm border-2 border-[#cafd00] bg-[#0e0e0e] text-[#cafd00] shadow-md outline-none ring-offset-2 ring-offset-[#0e0e0e] focus-visible:ring-2 focus-visible:ring-[#cafd00]",
+              "pointer-events-auto absolute top-1/2 flex h-14 w-10 min-h-[44px] min-w-[44px] -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-sm border-2 border-[#cafd00] bg-[#0e0e0e] text-[#cafd00] shadow-md outline-none ring-offset-2 ring-offset-[#0e0e0e] focus-visible:ring-2 focus-visible:ring-[#cafd00] sm:h-12 sm:w-8 sm:min-h-0 sm:min-w-0",
               dragging && "border-[#f3ffca] bg-[#1a1a1a]",
             )}
             style={{ left: "50%", transform: "translate(-50%, -50%)" }}
@@ -337,8 +338,13 @@ export function ImageEnlargerForm() {
     }
   }, [file, scale, downloadFormat, resultUrl]);
 
-  const onDownload = useCallback(() => {
+  const onDownload = useCallback(async () => {
     if (!resultBlob || !file) return;
+    const gate = await postUsageConsume("image-enlarger");
+    if (!gate.ok) {
+      setError(gate.message);
+      return;
+    }
     const ext = downloadFormat === "image/webp" ? "webp" : "png";
     const base = file.name.replace(/\.[^.]+$/, "") || "image";
     const a = document.createElement("a");
@@ -361,12 +367,12 @@ export function ImageEnlargerForm() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <div className="rounded-lg border-2 border-border bg-card/40 p-4 text-sm leading-relaxed text-muted-foreground shadow-sm sm:p-5">
         <p className="font-heading text-xs font-bold uppercase tracking-wide text-[#cafd00]">
           What this does
         </p>
-        <p className="mt-2">
+        <p className="mt-2 text-pretty">
           <strong className="text-foreground">Enlarge images with clean browser-side processing</strong>
           {" "}— increase width and height for web, social, and product use. Fast, private
           enlargement runs entirely in your browser: nothing is uploaded to a server.
@@ -379,7 +385,7 @@ export function ImageEnlargerForm() {
 
       <div
         className={cn(
-          "relative cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] p-8 text-center transition-colors hover:border-[#cafd00]/45",
+          "relative min-h-[10.5rem] cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] px-4 py-6 text-center transition-colors hover:border-[#cafd00]/45 sm:min-h-0 sm:p-8",
           phase === "working" && "pointer-events-none opacity-60",
         )}
         onClick={() => fileRef.current?.click()}
@@ -410,20 +416,20 @@ export function ImageEnlargerForm() {
         <p className="mt-3 font-heading text-sm font-bold uppercase tracking-widest text-white">
           Drop image or click to upload
         </p>
-        <p className="mt-2 text-xs text-stitch-muted">
+        <p className="mt-2 text-balance text-xs text-stitch-muted">
           JPG, PNG, or WebP · max {formatBytes(MAX_INPUT_BYTES)} · longest side ≤{" "}
           {MAX_INPUT_LONG_EDGE}px · processed in your browser
         </p>
       </div>
 
       {previewUrl && file ? (
-        <div className="overflow-hidden rounded-lg border-2 border-border bg-black/40 p-4">
-          <div className="relative mx-auto max-h-72 w-full max-w-lg">
+        <div className="min-w-0 overflow-hidden rounded-lg border-2 border-border bg-black/40 p-3 sm:p-4">
+          <div className="relative mx-auto max-h-[min(50vh,18rem)] w-full max-w-lg sm:max-h-72">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
               alt="Original preview"
-              className="mx-auto max-h-72 w-auto object-contain"
+              className="mx-auto max-h-[min(50vh,18rem)] w-auto max-w-full object-contain sm:max-h-72"
             />
           </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
@@ -448,12 +454,12 @@ export function ImageEnlargerForm() {
       ) : null}
 
       {file ? (
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="min-w-0 space-y-6 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
           <div>
             <span className="font-heading text-xs font-bold uppercase tracking-wide text-[#cafd00]">
               Scale
             </span>
-            <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               {SCALE_OPTIONS.map((opt) => (
                 <Button
                   key={opt.value}
@@ -461,7 +467,7 @@ export function ImageEnlargerForm() {
                   size="sm"
                   variant={scale === opt.value ? "default" : "outline"}
                   className={cn(
-                    "rounded-none font-heading text-xs font-bold uppercase tracking-widest",
+                    "w-full min-h-11 justify-center rounded-none font-heading text-xs font-bold uppercase tracking-widest sm:min-h-0 sm:w-auto",
                     scale === opt.value &&
                       "border-0 bg-[#cafd00] text-[#516700] hover:bg-[#f3ffca]",
                   )}
@@ -508,7 +514,7 @@ export function ImageEnlargerForm() {
             type="button"
             size="lg"
             disabled={phase === "working"}
-            className="rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]"
+            className="w-full justify-center rounded-none bg-[#cafd00] px-6 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca] sm:w-auto sm:px-8"
             onClick={() => void runEnlarge()}
           >
             {phase === "working" ? (
@@ -533,11 +539,11 @@ export function ImageEnlargerForm() {
       ) : null}
 
       {phase === "done" && resultBlob && file && resultUrl && outMeta && previewUrl ? (
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="min-w-0 space-y-6 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
           <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
             Result
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="break-words text-sm text-muted-foreground">
             Output size · {outMeta.w}×{outMeta.h}px · {formatBytes(resultBlob.size)}
           </p>
 
@@ -554,7 +560,7 @@ export function ImageEnlargerForm() {
             type="button"
             variant="outline"
             size="lg"
-            className="rounded-none"
+            className="w-full justify-center rounded-none sm:w-auto"
             onClick={onDownload}
           >
             <Download className="mr-2 size-4" aria-hidden />

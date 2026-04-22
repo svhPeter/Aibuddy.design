@@ -6,9 +6,9 @@ import { studioIdentity } from "@/config/studio";
 
 export function HomeStitchAbout() {
   return (
-    <section className="bg-black px-6 py-28 sm:px-10 md:py-36">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 md:grid-cols-12 md:gap-16">
-        <div className="order-2 md:order-1 md:col-span-5">
+    <section className="bg-black px-4 py-20 sm:px-6 sm:py-28 md:px-10 md:py-36">
+      <div className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 items-center gap-10 sm:gap-14 md:grid-cols-12 md:gap-16">
+        <div className="order-2 min-w-0 md:order-1 md:col-span-5">
           <div className="relative">
             <StudioIdentityVisual />
             <div className="absolute top-12 -right-12 hidden bg-[#cafd00] p-10 xl:block">
@@ -27,11 +27,11 @@ export function HomeStitchAbout() {
             </div>
           </div>
         </div>
-        <div className="order-1 md:order-2 md:col-span-7">
+        <div className="order-1 min-w-0 md:order-2 md:col-span-7">
           <p className="mb-4 text-xs font-bold uppercase tracking-[0.28em] text-[#cafd00]">
             {studioIdentity.attribution}
           </p>
-          <h2 className="font-stitch-display mb-10 text-5xl font-bold uppercase text-white md:mb-12 md:text-7xl">
+          <h2 className="font-stitch-display mb-8 text-balance text-4xl font-bold uppercase text-white sm:mb-10 sm:text-5xl md:mb-12 md:text-7xl">
             Independent
             <br />
             <span className="text-[#cafd00]">AI studio</span>

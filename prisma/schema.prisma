@@ -9,23 +9,55 @@ datasource db {
   provider = "postgresql"
 }
 
+enum BillingPlan {
+  free
+  pro
+}
+
 // Profile mirrors the authenticated Supabase user. `id` equals auth.users.id.
-// creditsBalance is the source of truth for gated tool calls; welcomeGrantedAt
-// gates the one-time 5-credit grant via an idempotent updateMany.
+// creditsBalance is legacy / display; monthly AI + utility quotas are enforced
+// via UserMonthlyUsage + plan.
 model Profile {
-  id               String   @id @db.Uuid
-  email            String   @unique
-  fullName         String?  @map("full_name")
-  avatarUrl        String?  @map("avatar_url")
-  creditsBalance   Int      @default(0) @map("credits_balance")
-  welcomeGrantedAt DateTime? @map("welcome_granted_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id                 String      @id @db.Uuid
+  email              String      @unique
+  fullName           String?     @map("full_name")
+  avatarUrl          String?     @map("avatar_url")
+  creditsBalance     Int         @default(0) @map("credits_balance")
+  welcomeGrantedAt   DateTime?   @map("welcome_granted_at")
+  plan               BillingPlan @default(free)
+  /// Monthly AI cap for Pro users (configurable; "unlimited" in practice).
+  proAiQuotaMonthly  Int         @default(50000) @map("pro_ai_quota_monthly")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
 
   usageLogs          UsageLog[]
   creditTransactions CreditTransaction[]
+  monthlyUsage       UserMonthlyUsage[]
 
   @@map("profiles")
+}
+
+/// Per-calendar-month counters for signed-in users (UTC month key YYYY-MM).
+model UserMonthlyUsage {
+  profileId   String @map("profile_id") @db.Uuid
+  yearMonth   String @map("year_month")
+  utilityUses Int    @default(0) @map("utility_uses")
+  aiUses      Int    @default(0) @map("ai_uses")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, yearMonth])
+  @@map("user_monthly_usage")
+}
+
+/// Guest identity (cookie `aibuddy_guest_id`) monthly total — all tools share one pool.
+model GuestMonthlyUsage {
+  guestId    String @map("guest_id")
+  yearMonth  String @map("year_month")
+  totalUses  Int    @default(0) @map("total_uses")
+
+  @@id([guestId, yearMonth])
+  @@map("guest_monthly_usage")
 }
 
 model UsageLog {

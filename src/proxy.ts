@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { GUEST_COOKIE_NAME } from "@/lib/access/quotas";
+
 const CALLBACK_PATH = "/auth/callback";
 
 /**
@@ -37,6 +39,18 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request });
+
+  const existingGuest = request.cookies.get(GUEST_COOKIE_NAME)?.value?.trim();
+  if (!existingGuest || existingGuest.length < 8) {
+    const guestId = crypto.randomUUID();
+    response.cookies.set(GUEST_COOKIE_NAME, guestId, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 400,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: false,
+    });
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

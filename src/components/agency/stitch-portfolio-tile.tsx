@@ -54,15 +54,15 @@ export function StitchPortfolioTile({
         className="object-cover object-center grayscale brightness-[0.55] transition-all duration-700 group-hover:scale-[1.03] group-hover:grayscale-[0.3] group-hover:brightness-[0.5]"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
-      <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12">
-        <span className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-[#cafd00] md:mb-4">
+      <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-8 md:p-12">
+        <span className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.28em] text-[#cafd00] sm:mb-3 sm:text-xs sm:tracking-[0.3em] md:mb-4">
           {eyebrow}
         </span>
-        <span className="font-heading text-3xl font-bold uppercase leading-[0.95] text-white md:text-4xl">
+        <span className="font-heading text-2xl font-bold uppercase leading-[0.95] text-white sm:text-3xl md:text-4xl">
           {title}
         </span>
         {description ? (
-          <p className="mt-4 max-w-2xl text-sm font-normal leading-relaxed text-white/70">
+          <p className="mt-3 max-w-2xl text-xs font-normal leading-relaxed text-white/70 sm:mt-4 sm:text-sm">
             {description}
           </p>
         ) : null}

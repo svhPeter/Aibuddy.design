@@ -14,13 +14,14 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="flex w-full flex-col items-center justify-between gap-10 border-t border-[#262626] bg-black px-6 py-16 sm:px-10 sm:py-20 md:flex-row md:items-start md:gap-8 supports-[padding:max(0px)]:pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+    <footer className="flex w-full min-w-0 flex-col items-center justify-between gap-10 border-t border-[#262626] bg-black px-4 py-12 sm:px-6 sm:py-16 md:px-10 md:py-20 md:flex-row md:items-start md:gap-8 supports-[padding:max(0px)]:pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="flex flex-col items-center gap-4 md:items-start">
         <div className="font-heading text-xl font-bold text-white">
           {siteConfig.name}
         </div>
         <p className="text-xs uppercase tracking-widest text-[#777575]">
-          © {year} {siteConfig.name} · {siteConfig.domain}. Architecting intelligence.
+          © {year} {siteConfig.name} · {siteConfig.domain} · v{siteConfig.version}.
+          Architecting intelligence.
         </p>
       </div>
       <div className="flex max-w-md flex-wrap justify-center gap-x-10 gap-y-4 md:max-w-none md:justify-end md:gap-x-12">

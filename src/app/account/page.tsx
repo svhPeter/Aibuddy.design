@@ -6,6 +6,11 @@ import { MarketingSection } from "@/components/shared/marketing-section";
 import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  FREE_AI_MONTHLY,
+  FREE_UTILITY_MONTHLY,
+  currentYearMonthUtc,
+} from "@/lib/access/quotas";
 import { prisma } from "@/lib/prisma";
 import {
   ensureProfileSafe,
@@ -111,33 +116,74 @@ message: ${lastError.message}`}
     );
   }
 
-  const usage: UsageRow[] = await prisma.usageLog
-    .findMany({
-      where: { profileId: profile.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        tool: true,
-        status: true,
-        creditsSpent: true,
-        createdAt: true,
-      },
-    })
-    .catch((e) => {
-      console.error("[account] usage lookup failed:", e);
-      return [];
-    });
+  const ym = currentYearMonthUtc();
 
-  return <AccountView profile={profile} usage={usage} />;
+  const [usage, planRow, monthRow] = await Promise.all([
+    prisma.usageLog
+      .findMany({
+        where: { profileId: profile.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          tool: true,
+          status: true,
+          creditsSpent: true,
+          createdAt: true,
+        },
+      })
+      .catch((e) => {
+        console.error("[account] usage lookup failed:", e);
+        return [];
+      }),
+    prisma.profile
+      .findUnique({
+        where: { id: profile.id },
+        select: { plan: true, proAiQuotaMonthly: true },
+      })
+      .catch((e) => {
+        console.error("[account] plan lookup failed:", e);
+        return null;
+      }),
+    prisma.userMonthlyUsage
+      .findUnique({
+        where: {
+          profileId_yearMonth: { profileId: profile.id, yearMonth: ym },
+        },
+      })
+      .catch((e) => {
+        console.error("[account] monthly usage lookup failed:", e);
+        return null;
+      }),
+  ]);
+
+  const monthly = {
+    yearMonth: ym,
+    plan: planRow?.plan ?? "free",
+    proAiCap: planRow?.proAiQuotaMonthly ?? 50_000,
+    utilityUses: monthRow?.utilityUses ?? 0,
+    aiUses: monthRow?.aiUses ?? 0,
+  };
+
+  return (
+    <AccountView profile={profile} usage={usage} monthly={monthly} />
+  );
 }
 
 function AccountView({
   profile,
   usage,
+  monthly,
 }: {
   profile: ProfileRow;
   usage: UsageRow[];
+  monthly: {
+    yearMonth: string;
+    plan: "free" | "pro";
+    proAiCap: number;
+    utilityUses: number;
+    aiUses: number;
+  };
 }) {
   return (
     <PageShell>
@@ -148,37 +194,67 @@ function AccountView({
       />
 
       <MarketingSection>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm">
             <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
-              Credits
+              This month ({monthly.yearMonth} UTC)
             </h2>
-            <p className="mt-4 font-heading text-4xl font-bold tracking-tight text-foreground">
-              {profile.creditsBalance}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Plan:{" "}
+              <span className="font-medium text-foreground">
+                {monthly.plan === "pro" ? "Pro" : "Free"}
+              </span>
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              1 credit per successful generation. Credits are only deducted on
-              success — failed runs never cost you anything.
-            </p>
+            {monthly.plan === "pro" ? (
+              <ul className="mt-4 space-y-2 text-sm text-foreground">
+                <li>Utility tools: unlimited</li>
+                <li>
+                  AI tools: {monthly.aiUses} / {monthly.proAiCap}
+                </li>
+              </ul>
+            ) : (
+              <ul className="mt-4 space-y-2 text-sm text-foreground">
+                <li>
+                  Utility: {monthly.utilityUses} / {FREE_UTILITY_MONTHLY}
+                </li>
+                <li>
+                  AI: {monthly.aiUses} / {FREE_AI_MONTHLY}
+                </li>
+              </ul>
+            )}
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button
-                type="button"
-                size="sm"
-                disabled
-                className="rounded-none bg-[#cafd00]/40 font-heading text-xs font-bold uppercase tracking-widest text-[#516700]/60"
-              >
-                Buy credits (coming soon)
-              </Button>
               <Link
-                href="/tools/image-to-prompt"
+                href="/pricing"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
                   "rounded-none",
                 )}
               >
-                Go to tool
+                Pricing
+              </Link>
+              <Link
+                href="/tools"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "rounded-none",
+                )}
+              >
+                Tools
               </Link>
             </div>
+          </div>
+
+          <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm">
+            <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
+              Welcome credits (legacy)
+            </h2>
+            <p className="mt-4 font-heading text-4xl font-bold tracking-tight text-foreground">
+              {profile.creditsBalance}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Balance from the original welcome grant. Image to Prompt now uses
+              monthly AI quota instead of spending credits.
+            </p>
           </div>
 
           <div className="rounded-lg border-2 border-border bg-card p-6 shadow-sm">

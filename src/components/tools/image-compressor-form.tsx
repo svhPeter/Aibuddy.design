@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Download, ImagePlus, Loader2 } from "lucide-react";
 
+import { postUsageConsume } from "@/lib/access/client-consume";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -144,8 +145,13 @@ export function ImageCompressorForm() {
     }
   }, [file, outputMime, qualityPct, compressedUrl, webpSupported]);
 
-  const onDownload = useCallback(() => {
+  const onDownload = useCallback(async () => {
     if (!compressedBlob || !file) return;
+    const gate = await postUsageConsume("image-compressor");
+    if (!gate.ok) {
+      setError(gate.message);
+      return;
+    }
     const ext = compressedBlob.type.includes("webp") ? "webp" : "jpg";
     const base = file.name.replace(/\.[^.]+$/, "") || "image";
     const a = document.createElement("a");
@@ -168,10 +174,10 @@ export function ImageCompressorForm() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <div
         className={cn(
-          "relative cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] p-8 text-center transition-colors hover:border-[#cafd00]/45",
+          "relative min-h-[10.5rem] cursor-pointer rounded-lg border-2 border-dashed border-[#777575] bg-[#131313] px-4 py-6 text-center transition-colors hover:border-[#cafd00]/45 sm:min-h-0 sm:p-8",
           phase === "working" && "pointer-events-none opacity-60",
         )}
         onClick={() => fileRef.current?.click()}
@@ -208,16 +214,16 @@ export function ImageCompressorForm() {
       </div>
 
       {previewUrl && file ? (
-        <div className="overflow-hidden rounded-lg border-2 border-border bg-black/40 p-4">
-          <div className="relative mx-auto max-h-72 w-full max-w-lg">
+        <div className="min-w-0 overflow-hidden rounded-lg border-2 border-border bg-black/40 p-3 sm:p-4">
+          <div className="relative mx-auto max-h-[min(50vh,18rem)] w-full max-w-lg sm:max-h-72">
             {/* eslint-disable-next-line @next/next/no-img-element -- blob preview */}
             <img
               src={previewUrl}
               alt="Original preview"
-              className="mx-auto max-h-72 w-auto object-contain"
+              className="mx-auto max-h-[min(50vh,18rem)] w-auto max-w-full object-contain sm:max-h-72"
             />
           </div>
-          <p className="mt-3 text-center text-xs text-muted-foreground">
+          <p className="mt-3 text-balance break-words text-center text-xs text-muted-foreground">
             Original file · {formatBytes(file.size)}
             {meta ? ` · ${meta.w}×${meta.h}px` : null}
           </p>
@@ -240,7 +246,7 @@ export function ImageCompressorForm() {
       ) : null}
 
       {file ? (
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="min-w-0 space-y-6 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
           <div>
             <label
               htmlFor={`${inputId}-quality`}
@@ -302,7 +308,7 @@ export function ImageCompressorForm() {
             type="button"
             size="lg"
             disabled={phase === "working"}
-            className="rounded-none bg-[#cafd00] px-8 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca]"
+            className="w-full justify-center rounded-none bg-[#cafd00] px-6 font-heading text-xs font-bold uppercase tracking-widest text-[#516700] hover:bg-[#f3ffca] sm:w-auto sm:px-8"
             onClick={() => void runCompress()}
           >
             {phase === "working" ? (
@@ -327,22 +333,22 @@ export function ImageCompressorForm() {
       ) : null}
 
       {phase === "done" && compressedBlob && file && compressedUrl ? (
-        <div className="space-y-4 rounded-lg border-2 border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="min-w-0 space-y-4 rounded-lg border-2 border-border bg-card p-4 shadow-sm sm:p-6">
           <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-[#cafd00]">
             Result
           </h3>
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
+          <div className="grid min-w-0 gap-3 text-sm sm:grid-cols-2">
+            <div className="min-w-0 rounded-md border border-border bg-background/60 px-3 py-2">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Original
               </p>
               <p className="mt-1 font-medium text-foreground">{formatBytes(file.size)}</p>
             </div>
-            <div className="rounded-md border border-border bg-background/60 px-3 py-2">
+            <div className="min-w-0 rounded-md border border-border bg-background/60 px-3 py-2">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Compressed
               </p>
-              <p className="mt-1 font-medium text-foreground">
+              <p className="mt-1 break-words font-medium text-foreground">
                 {formatBytes(compressedBlob.size)}
                 <span className="ml-2 text-xs text-[#cafd00]">
                   (
@@ -356,19 +362,19 @@ export function ImageCompressorForm() {
               </p>
             </div>
           </div>
-          <div className="relative mx-auto max-h-56 w-full max-w-md overflow-hidden rounded-md border border-border">
+          <div className="relative mx-auto max-h-[min(45vh,14rem)] w-full min-w-0 max-w-md overflow-hidden rounded-md border border-border sm:max-h-56">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={compressedUrl}
               alt="Compressed preview"
-              className="mx-auto max-h-56 w-auto object-contain"
+              className="mx-auto max-h-[min(45vh,14rem)] w-auto max-w-full object-contain sm:max-h-56"
             />
           </div>
           <Button
             type="button"
             variant="outline"
             size="lg"
-            className="rounded-none"
+            className="w-full justify-center rounded-none sm:w-auto"
             onClick={onDownload}
           >
             <Download className="mr-2 size-4" aria-hidden />

@@ -22,6 +22,7 @@ type SiteHeaderProps = {
 const navItems = [
   { href: "/services", label: "Strategy" },
   { href: "/tools", label: "Tools" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/about", label: "About" },
 ] as const;
@@ -39,10 +40,10 @@ export function SiteHeader({ auth }: SiteHeaderProps) {
   const accountHref = auth ? "/account" : "/sign-in";
 
   return (
-    <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#262626]/80 bg-[#0e0e0e]/95 px-6 py-5 backdrop-blur-xl backdrop-saturate-150 sm:px-10 supports-[padding:max(0px)]:pt-[max(1.1rem,env(safe-area-inset-top))]">
+    <header className="fixed top-0 z-50 flex w-full min-w-0 items-center justify-between gap-3 border-b border-[#262626]/80 bg-[#0e0e0e]/95 px-4 py-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6 sm:py-5 md:px-10 supports-[padding:max(0px)]:pt-[max(0.85rem,env(safe-area-inset-top))]">
       <Link
         href="/"
-        className="font-heading text-lg font-bold tracking-tighter text-[#cafd00] sm:text-2xl"
+        className="min-w-0 shrink font-heading text-base font-bold tracking-tighter text-[#cafd00] sm:text-xl md:text-2xl"
       >
         {siteConfig.name}
       </Link>

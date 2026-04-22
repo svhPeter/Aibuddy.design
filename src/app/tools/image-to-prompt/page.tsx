@@ -5,9 +5,9 @@ import { ToolCrossLinks } from "@/components/tools/tool-cross-links";
 import { MarketingSection } from "@/components/shared/marketing-section";
 import { PageHeading } from "@/components/shared/page-heading";
 import { PageShell } from "@/components/shared/page-shell";
+import type { UsageStatusPayload } from "@/lib/access/usage";
+import { getUsageStatus } from "@/lib/access/usage";
 import { getWhatsAppContactHref, siteConfig } from "@/config/site";
-import { prisma } from "@/lib/prisma";
-import { ensureProfileSafe } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -19,49 +19,31 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-async function readToolAuth(): Promise<{
+async function readUsageForPage(): Promise<{
   isAuthenticated: boolean;
-  creditsBalance: number;
+  usage: UsageStatusPayload | null;
 }> {
   try {
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return { isAuthenticated: false, creditsBalance: 0 };
+    if (!user) return { isAuthenticated: false, usage: null };
 
-    const existing = await prisma.profile
-      .findUnique({
-        where: { id: user.id },
-        select: { creditsBalance: true },
-      })
-      .catch((e) => {
-        console.error("[image-to-prompt page] profile lookup failed:", e);
-        return null;
-      });
-    if (existing) {
-      return {
-        isAuthenticated: true,
-        creditsBalance: existing.creditsBalance,
-      };
-    }
-
-    // First-time visit after sign-in: bootstrap so the user gets their
-    // welcome credits before clicking generate.
-    const created = await ensureProfileSafe(user);
-    return {
-      isAuthenticated: true,
-      creditsBalance: created?.creditsBalance ?? 0,
-    };
+    const usage = await getUsageStatus({
+      user,
+      guestKey: "",
+    });
+    return { isAuthenticated: true, usage };
   } catch (e) {
-    console.error("[image-to-prompt page] readToolAuth failed:", e);
-    return { isAuthenticated: false, creditsBalance: 0 };
+    console.error("[image-to-prompt page] readUsageForPage failed:", e);
+    return { isAuthenticated: false, usage: null };
   }
 }
 
 export default async function ImageToPromptPage() {
   const whatsappHref = getWhatsAppContactHref();
-  const { isAuthenticated, creditsBalance } = await readToolAuth();
+  const { isAuthenticated, usage } = await readUsageForPage();
 
   return (
     <PageShell>
@@ -76,7 +58,7 @@ export default async function ImageToPromptPage() {
           whatsappHref={whatsappHref}
           contactEmail={siteConfig.links.email}
           isAuthenticated={isAuthenticated}
-          creditsBalance={creditsBalance}
+          usage={usage}
         />
       </MarketingSection>
 

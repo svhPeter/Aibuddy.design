@@ -4,14 +4,14 @@ const MARQUEE_SEGMENT =
 export function HomeStitchMarquee() {
   const block = MARQUEE_SEGMENT.repeat(4);
   return (
-    <div className="bg-[#cafd00] py-5">
-      <div className="relative overflow-hidden">
-        <div className="flex w-max animate-stitch-marquee will-change-transform">
-          <span className="font-heading inline-flex items-center gap-0 px-3 text-2xl font-bold uppercase italic tracking-tighter text-[#516700]">
+    <div className="bg-[#cafd00] py-4 sm:py-5">
+      <div className="relative overflow-x-hidden">
+        <div className="flex w-max max-w-none animate-stitch-marquee will-change-transform">
+          <span className="font-heading inline-flex items-center gap-0 px-3 text-lg font-bold uppercase italic tracking-tighter text-[#516700] sm:text-xl md:text-2xl">
             {block}
           </span>
           <span
-            className="font-heading inline-flex items-center gap-0 px-3 text-2xl font-bold uppercase italic tracking-tighter text-[#516700]"
+            className="font-heading inline-flex items-center gap-0 px-3 text-lg font-bold uppercase italic tracking-tighter text-[#516700] sm:text-xl md:text-2xl"
             aria-hidden
           >
             {block}
