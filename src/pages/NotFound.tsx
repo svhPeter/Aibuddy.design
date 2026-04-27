@@ -1,9 +1,12 @@
 import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
+import { Navigation } from "@/components/Navigation";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      <div className="pt-16 flex min-h-[70vh] items-center justify-center px-6">
       <div className="text-center">
         <div className="font-oswald text-[120px] md:text-[180px] font-bold leading-none tracking-[-0.05em] text-[#1a1a1a]/10 mb-4">
           404
@@ -19,7 +22,7 @@ export default function NotFound() {
           className="btn-brutal btn-brutal-yellow inline-flex items-center gap-2"
         >
           <ArrowLeft size={16} />
-          BACK TO STUDIO
+          Back to home
         </Link>
 
         {/* Decorative */}
@@ -29,6 +32,7 @@ export default function NotFound() {
           <div className="w-16 h-16 bg-[#FF0004] border-[3px] border-black" />
           <div className="w-16 h-16 bg-[#1a1a1a] border-[3px] border-black" />
         </div>
+      </div>
       </div>
     </div>
   );

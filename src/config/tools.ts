@@ -50,8 +50,9 @@ export const toolsCatalog: readonly ToolEntry[] = [
   {
     id: "jpg-pdf-tool",
     href: "/tools/jpg-pdf-tool",
-    name: "JPG ↔ PDF",
-    description: "Merge images into one PDF or export PDF pages to JPG — local and private.",
+    name: "Images → PDF",
+    description:
+      "Merge multiple images into one A4 PDF (one image per page) — in your browser, no upload.",
     badge: "Free",
   },
   {

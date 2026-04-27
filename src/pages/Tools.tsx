@@ -1,10 +1,13 @@
 import { Link } from "react-router";
 import { ArrowUpRight, ArrowLeft } from "lucide-react";
 import { toolsCatalog } from "@/config/tools";
+import { Navigation } from "@/components/Navigation";
 
 export default function Tools() {
   return (
-    <div className="min-h-screen bg-white pt-16">
+    <div className="min-h-screen bg-white">
+      <Navigation />
+      <div className="pt-16">
       <div className="border-b-[3px] border-black px-6 md:px-12 lg:px-16 py-12">
         <span className="font-oswald text-xs font-bold uppercase tracking-[0.2em] text-[#FF0004] block mb-2">
           Utilities + AI
@@ -47,8 +50,9 @@ export default function Tools() {
       <div className="px-6 md:px-12 lg:px-16 py-10">
         <Link to="/" className="btn-brutal btn-brutal-black inline-flex items-center gap-2">
           <ArrowLeft size={16} />
-          BACK TO STUDIO
+          Back to home
         </Link>
+      </div>
       </div>
     </div>
   );
