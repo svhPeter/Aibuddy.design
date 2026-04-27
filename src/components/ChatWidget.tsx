@@ -89,10 +89,7 @@ export function ChatWidget() {
                 <p className="font-inter text-sm text-[#1a1a1a]/60 mb-4">
                   Log in to chat with our studio team
                 </p>
-                <a
-                  href="/api/oauth/authorize"
-                  className="btn-brutal btn-brutal-yellow text-xs py-2 px-4"
-                >
+                <a href="/login" className="btn-brutal btn-brutal-yellow text-xs py-2 px-4">
                   LOG IN
                 </a>
               </div>

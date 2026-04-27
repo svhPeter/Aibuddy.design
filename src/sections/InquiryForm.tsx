@@ -267,10 +267,7 @@ export function InquiryForm() {
               <p className="font-inter text-sm">
                 <strong className="font-oswald uppercase">Note:</strong> Log in
                 to save drafts and track your commissions.{" "}
-                <a
-                  href="/api/oauth/authorize"
-                  className="underline font-bold"
-                >
+                <a href="/login" className="underline font-bold">
                   Log in here
                 </a>
                 .
