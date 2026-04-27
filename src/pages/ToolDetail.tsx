@@ -1,10 +1,16 @@
-import { Link, useParams } from "react-router";
-import { ArrowLeft, Lock } from "lucide-react";
+import { Link, Navigate, useParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
 import { getToolById } from "@/config/tools";
+import { CurrencyConverter } from "@/components/tools/CurrencyConverter";
 
 export default function ToolDetail() {
   const params = useParams();
   const toolId = params.toolId ?? "";
+
+  if (toolId === "image-to-prompt") {
+    return <Navigate to="/tools/currency-converter" replace />;
+  }
+
   const tool = getToolById(toolId);
 
   if (!tool) {
@@ -39,12 +45,6 @@ export default function ToolDetail() {
           <span className="inline-flex items-center gap-2 bg-[#F9FF00] px-3 py-1 font-oswald text-xs font-bold uppercase tracking-widest border-[3px] border-black">
             {tool.badge}
           </span>
-          {tool.access === "account" && (
-            <span className="inline-flex items-center gap-2 bg-white px-3 py-1 font-oswald text-xs font-bold uppercase tracking-widest border-[3px] border-black">
-              <Lock size={14} />
-              Sign in required
-            </span>
-          )}
         </div>
 
         <h1 className="font-oswald text-4xl md:text-6xl font-bold uppercase tracking-[-0.03em] mt-6">
@@ -57,16 +57,25 @@ export default function ToolDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12">
         <div className="lg:col-span-8 border-r-[3px] border-black px-6 md:px-12 lg:px-16 py-10">
-          <div className="border-[3px] border-black p-8">
-            <h2 className="font-oswald text-xl font-bold uppercase tracking-tight mb-4">
-              Tool UI
-            </h2>
-            <p className="font-inter text-sm text-[#1a1a1a]/70 leading-relaxed">
-              This route is ready and wired. Next step is implementing the full tool
-              logic (upload/inputs/output) for <strong className="font-inter">{tool.name}</strong>{" "}
-              inside this panel, using the same brutal UI components.
-            </p>
-          </div>
+          {tool.id === "currency-converter" ? (
+            <div className="border-[3px] border-black p-6 md:p-8">
+              <h2 className="font-oswald text-xl font-bold uppercase tracking-tight mb-4">
+                Convert
+              </h2>
+              <CurrencyConverter />
+            </div>
+          ) : (
+            <div className="border-[3px] border-black p-8">
+              <h2 className="font-oswald text-xl font-bold uppercase tracking-tight mb-4">
+                Tool UI
+              </h2>
+              <p className="font-inter text-sm text-[#1a1a1a]/70 leading-relaxed">
+                This route is ready and wired. Next step is implementing the full tool
+                logic (upload/inputs/output) for <strong className="font-inter">{tool.name}</strong>{" "}
+                inside this panel, using the same brutal UI components.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="lg:col-span-4 px-6 md:px-10 py-10 bg-[#1a1a1a] text-white">
@@ -75,10 +84,10 @@ export default function ToolDetail() {
           </h3>
           <div className="space-y-3">
             <Link
-              to="/login"
+              to="/tools"
               className="btn-brutal btn-brutal-yellow w-full block text-center"
             >
-              SIGN IN
+              ALL TOOLS
             </Link>
             <Link
               to="/contact"
@@ -86,10 +95,15 @@ export default function ToolDetail() {
             >
               CONTACT
             </Link>
+            <Link
+              to="/#inquiry"
+              className="w-full block text-center font-inter text-sm text-white/80 underline"
+            >
+              Project inquiry
+            </Link>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

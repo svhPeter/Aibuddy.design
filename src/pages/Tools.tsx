@@ -13,7 +13,7 @@ export default function Tools() {
           TOOLS
         </h1>
         <p className="font-inter text-sm md:text-base text-[#1a1a1a]/70 max-w-2xl mt-4 leading-relaxed">
-          Fast browser utilities plus AI-powered tools. Pick one and ship output in minutes.
+          All free in the browser — no login. Pick a utility and ship output in minutes.
         </p>
       </div>
 
@@ -29,7 +29,6 @@ export default function Tools() {
                 <div>
                   <div className="font-oswald text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/70">
                     {tool.badge}
-                    {tool.access === "account" ? " · Account" : ""}
                   </div>
                   <div className="font-oswald text-2xl font-bold uppercase tracking-tight mt-3">
                     {tool.name}

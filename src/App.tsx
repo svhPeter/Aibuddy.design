@@ -1,8 +1,5 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-import CommissionDetail from "./pages/CommissionDetail";
-import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Tools from "./pages/Tools";
 import ToolDetail from "./pages/ToolDetail";
@@ -15,9 +12,9 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/commission/:id" element={<CommissionDetail />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+        <Route path="/commission/:id" element={<Navigate to="/" replace />} />
         <Route path="/tools" element={<Tools />} />
         <Route path="/tools/:toolId" element={<ToolDetail />} />
         <Route path="/about" element={<About />} />

@@ -46,14 +46,16 @@ export function Navigation() {
             <Link
               to="/"
               className="font-oswald text-xl font-bold tracking-tight-oswald uppercase flex items-center gap-3"
+              aria-label={`${siteConfig.name} home`}
             >
-              <span className="inline-flex items-center justify-center h-8 w-8 rounded-xl border-[3px] border-black bg-white/65 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.08)]">
-                <img
-                  src="/icon.png"
-                  alt={`${siteConfig.name} logo`}
-                  className="h-5 w-5 object-contain"
-                />
-              </span>
+              <img
+                src="/logoheader.svg"
+                alt=""
+                className="h-8 w-auto object-contain object-left shrink-0"
+                width={50}
+                height={64}
+                aria-hidden
+              />
               {siteConfig.name}
             </Link>
           </div>
@@ -89,14 +91,16 @@ export function Navigation() {
           <Link
             to="/"
             className="font-oswald text-lg font-bold tracking-tight-oswald uppercase flex items-center gap-2"
+            aria-label={`${siteConfig.name} home`}
           >
-            <span className="inline-flex items-center justify-center h-8 w-8 rounded-xl border-[3px] border-black bg-white/65 backdrop-blur-md shadow-[0_1px_0_rgba(0,0,0,0.08)]">
-              <img
-                src="/icon.png"
-                alt={`${siteConfig.name} logo`}
-                className="h-5 w-5 object-contain"
-              />
-            </span>
+            <img
+              src="/logoheader.svg"
+              alt=""
+              className="h-7 w-auto object-contain object-left shrink-0"
+              width={44}
+              height={56}
+              aria-hidden
+            />
             <span className="leading-none">{siteConfig.name}</span>
           </Link>
           <button onClick={() => setMenuOpen(!menuOpen)} className="p-2">

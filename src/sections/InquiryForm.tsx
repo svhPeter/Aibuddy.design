@@ -1,8 +1,11 @@
-import { useState, useCallback } from "react";
-import { trpc } from "@/providers/trpc";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router";
+import { useState, useCallback, useMemo } from "react";
 import { siteConfig } from "@/config/site";
+import {
+  buildInquiryBody,
+  getWhatsappBaseUrl,
+  appendTextToWhatsappUrl,
+  buildInquiryMailto,
+} from "@/lib/inquiry-brief";
 import {
   Send,
   Save,
@@ -11,14 +14,17 @@ import {
   CheckCircle,
   ImagePlus,
   X,
+  Mail,
+  MessageCircle,
+  Copy,
 } from "lucide-react";
 
 const projectTypes = [
-  { value: "editorial", label: "EDITORIAL ILLUSTRATION" },
-  { value: "brand", label: "BRAND IDENTITY" },
-  { value: "publishing", label: "PUBLISHING" },
-  { value: "packaging", label: "PACKAGING" },
-  { value: "motion", label: "MOTION DESIGN" },
+  { value: "web", label: "WEB & PRODUCT" },
+  { value: "mobile", label: "MOBILE" },
+  { value: "ai", label: "AI & AUTOMATION" },
+  { value: "design", label: "DESIGN & UX" },
+  { value: "infra", label: "DEVOPS & INFRA" },
   { value: "other", label: "OTHER" },
 ] as const;
 
@@ -32,23 +38,22 @@ const budgetRanges = [
 ] as const;
 
 const rightsOptions = [
-  { value: "oneTime", label: "ONE-TIME USE" },
-  { value: "limited", label: "LIMITED LICENSE" },
-  { value: "exclusive", label: "EXCLUSIVE LICENSE" },
-  { value: "fullBuyout", label: "FULL BUYOUT" },
+  { value: "project", label: "PROJECT-BASED" },
+  { value: "retainer", label: "RETAINER / ONGOING" },
+  { value: "license", label: "LICENSE & IP" },
+  { value: "workForHire", label: "WORK FOR HIRE" },
   { value: "toBeDiscussed", label: "TO BE DISCUSSED" },
 ] as const;
 
 const deliverableOptions = [
-  "Digital Illustration",
-  "Print-Ready Artwork",
-  "Motion Graphics",
-  "Brand Identity System",
-  "Packaging Design",
-  "Social Media Assets",
-  "Editorial Layout",
-  "Type Design",
-];
+  "UI / design system",
+  "Web frontend",
+  "Mobile app",
+  "API / backend",
+  "AI integration",
+  "DevOps & hosting",
+  "Strategy / copy",
+] as const;
 
 type FormData = {
   title: string;
@@ -73,20 +78,50 @@ const initialForm: FormData = {
 };
 
 export function InquiryForm() {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [refInput, setRefInput] = useState("");
+  const [draftCopied, setDraftCopied] = useState(false);
 
-  const createMutation = trpc.commission.create.useMutation({
-    onSuccess: (data) => {
-      if (data) {
-        setSubmitted(true);
-      }
-    },
-  });
+  const waBase = useMemo(() => getWhatsappBaseUrl(), []);
+
+  const briefInput = useMemo(
+    () => ({
+      title: form.title,
+      projectTypeLabel:
+        projectTypes.find((p) => p.value === form.projectType)?.label || "—",
+      description: form.description,
+      deliverables: form.deliverables,
+      deadline: form.deadline,
+      budgetLabel:
+        budgetRanges.find((b) => b.value === form.budget)?.label || "—",
+      rightsLabel:
+        rightsOptions.find((r) => r.value === form.rightsUsage)?.label || "—",
+      visualReferences: form.visualReferences,
+    }),
+    [form]
+  );
+
+  const inquiryBody = useMemo(
+    () => buildInquiryBody(briefInput),
+    [briefInput]
+  );
+
+  const mailtoHref = useMemo(
+    () =>
+      buildInquiryMailto(
+        siteConfig.links.email,
+        `AIBuddy inquiry: ${form.title || "New project"}`,
+        inquiryBody
+      ),
+    [inquiryBody, form.title]
+  );
+
+  const whatsappHref = useMemo(() => {
+    if (!waBase) return undefined;
+    return appendTextToWhatsappUrl(waBase, inquiryBody);
+  }, [waBase, inquiryBody]);
 
   const setField = useCallback(
     <K extends keyof FormData>(key: K, value: FormData[K]) => {
@@ -122,39 +157,29 @@ export function InquiryForm() {
   };
 
   const handleSubmit = () => {
-    if (!isAuthenticated) {
-      navigate("/login");
+    if (!form.title || !form.projectType) return;
+    setSubmitted(true);
+  };
+
+  const handleCopyBrief = async () => {
+    try {
+      await navigator.clipboard.writeText(inquiryBody);
+    } catch {
       return;
     }
-    if (!form.title || !form.projectType) return;
-    createMutation.mutate({
-      title: form.title,
-      projectType: form.projectType as "editorial" | "brand" | "publishing" | "packaging" | "motion" | "other",
-      description: form.description || undefined,
-      deliverables: form.deliverables.length > 0 ? form.deliverables : undefined,
-      deadline: form.deadline || undefined,
-      budget: form.budget as "under5k" | "5to10k" | "10to25k" | "25to50k" | "over50k" | "undisclosed" | undefined,
-      rightsUsage: form.rightsUsage as "oneTime" | "limited" | "exclusive" | "fullBuyout" | "toBeDiscussed" | undefined,
-      visualReferences: form.visualReferences.length > 0 ? form.visualReferences : undefined,
-    });
   };
 
   const handleSaveDraft = () => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    if (!form.title || !form.projectType) return;
-    createMutation.mutate({
-      title: form.title,
-      projectType: form.projectType as "editorial" | "brand" | "publishing" | "packaging" | "motion" | "other",
-      description: form.description || undefined,
-      deliverables: form.deliverables.length > 0 ? form.deliverables : undefined,
-      deadline: form.deadline || undefined,
-      budget: form.budget as "under5k" | "5to10k" | "10to25k" | "25to50k" | "over50k" | "undisclosed" | undefined,
-      rightsUsage: form.rightsUsage as "oneTime" | "limited" | "exclusive" | "fullBuyout" | "toBeDiscussed" | undefined,
-      visualReferences: form.visualReferences.length > 0 ? form.visualReferences : undefined,
-    });
+    if (!form.title) return;
+    void (async () => {
+      try {
+        await navigator.clipboard.writeText(inquiryBody);
+        setDraftCopied(true);
+        setTimeout(() => setDraftCopied(false), 2500);
+      } catch {
+        // ignore
+      }
+    })();
   };
 
   if (submitted) {
@@ -164,29 +189,58 @@ export function InquiryForm() {
           <div className="border-[3px] border-black p-12">
             <CheckCircle size={48} className="mx-auto mb-6 text-[#F9FF00]" />
             <h3 className="font-oswald text-3xl md:text-4xl font-bold uppercase tracking-[-0.02em] mb-4">
-              COMMISSION RECEIVED
+              BRIEF READY
             </h3>
             <p className="font-inter text-sm leading-relaxed text-[#1a1a1a]/70 mb-8">
-              Your inquiry has been saved as a draft. You can view and manage it
-              from your dashboard. Our art directors will review your brief and
-              respond within 48 hours.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="btn-brutal btn-brutal-yellow"
+              Send the same project brief through WhatsApp or email — or copy
+              the text. No account is required. We will reply at{" "}
+              <a
+                className="underline font-semibold"
+                href={`mailto:${siteConfig.links.email}`}
               >
-                VIEW DASHBOARD
-              </button>
+                {siteConfig.links.email}
+              </a>
+              .
+            </p>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
+              {whatsappHref ? (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-brutal btn-brutal-yellow inline-flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={18} />
+                  WHATSAPP
+                </a>
+              ) : null}
+              <a
+                href={mailtoHref}
+                className="btn-brutal btn-brutal-black inline-flex items-center justify-center gap-2"
+              >
+                <Mail size={18} />
+                EMAIL
+              </a>
               <button
+                type="button"
+                onClick={() => void handleCopyBrief()}
+                className="btn-brutal flex items-center justify-center gap-2 border-[3px] border-black bg-white"
+              >
+                <Copy size={18} />
+                COPY BRIEF
+              </button>
+            </div>
+            <div className="mt-8">
+              <button
+                type="button"
                 onClick={() => {
                   setSubmitted(false);
                   setForm(initialForm);
                   setStep(0);
                 }}
-                className="btn-brutal btn-brutal-black"
+                className="font-oswald text-xs font-bold uppercase tracking-widest underline"
               >
-                NEW INQUIRY
+                New inquiry
               </button>
             </div>
           </div>
@@ -202,12 +256,15 @@ export function InquiryForm() {
     { label: "REVIEW", num: 3 },
   ];
 
+  const canAdvance =
+    form.title.trim().length > 0 && form.projectType.length > 0;
+  const saveOrCopyEnabled = canAdvance;
+
   return (
     <section id="inquiry" className="border-b-[3px] border-black">
-      {/* Section Header */}
       <div className="border-b-[3px] border-black px-6 md:px-12 lg:px-16 py-12">
         <span className="font-oswald text-xs font-bold uppercase tracking-[0.2em] text-[#FF0004] block mb-2">
-          Start a Project
+          Start a project
         </span>
         <h2 className="font-oswald text-4xl md:text-6xl font-bold uppercase tracking-[-0.03em]">
           INQUIRY
@@ -215,20 +272,20 @@ export function InquiryForm() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12">
-        {/* Left Column - Instructions */}
         <div className="lg:col-span-3 border-r-[3px] border-black border-b-[3px] lg:border-b-0 px-6 md:px-8 py-8 bg-[#fafafa]">
           <h3 className="font-oswald text-lg font-bold uppercase tracking-tight mb-4">
             INSTRUCTIONS
           </h3>
           <p className="font-inter text-xs leading-relaxed text-[#1a1a1a]/70 mb-6">
-            Complete all steps to submit your commission inquiry. You can save
-            as a draft at any time and return later via your dashboard.
+            Work through the steps, then on submit we will prepare your brief for
+            WhatsApp and email. You can also copy the brief to your clipboard at
+            any time after the project title and type are set.
           </p>
 
-          {/* Step indicator */}
           <div className="space-y-0">
             {steps.map((s) => (
               <button
+                type="button"
                 key={s.num}
                 onClick={() => setStep(s.num)}
                 className={`w-full text-left px-4 py-3 border-[3px] border-black mb-[-3px] relative transition-colors ${
@@ -254,38 +311,31 @@ export function InquiryForm() {
               NEED HELP?
             </h4>
             <p className="font-inter text-[11px] leading-relaxed text-[#1a1a1a]/60">
-              Use the chat widget in the bottom right corner to ask questions
-              about the commission process.
+              Use the chat widget, email {siteConfig.links.email}, or finish the
+              form and send the brief on WhatsApp or by email in the last step.
             </p>
           </div>
         </div>
 
-        {/* Middle Column - Form */}
         <div className="lg:col-span-6 border-r-[3px] border-black px-6 md:px-10 py-8">
-          {!isAuthenticated && (
-            <div className="mb-6 bg-[#F9FF00] border-[3px] border-black p-4">
-              <p className="font-inter text-sm">
-                <strong className="font-oswald uppercase">Note:</strong> Log in
-                to save drafts and track your commissions.{" "}
-                <a href="/login" className="underline font-bold">
-                  Log in here
-                </a>
-                .
-              </p>
-            </div>
-          )}
+          <div className="mb-6 bg-[#F9FF00] border-[3px] border-black p-4">
+            <p className="font-inter text-sm">
+              <strong className="font-oswald uppercase">Note:</strong> No
+              account needed — use WhatsApp or email from the last step, or copy
+              the brief.
+            </p>
+          </div>
 
-          {/* Step 1: Project */}
           {step === 0 && (
             <div className="space-y-6">
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project Title *
+                  Project title *
                 </label>
                 <input
                   type="text"
                   className="input-brutal"
-                  placeholder="e.g., Spring Editorial Cover Series"
+                  placeholder="e.g. Customer portal MVP, AI support workflow"
                   value={form.title}
                   onChange={(e) => setField("title", e.target.value)}
                 />
@@ -293,11 +343,12 @@ export function InquiryForm() {
 
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project Type *
+                  Project type *
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-0 border-[3px] border-black">
                   {projectTypes.map((pt) => (
                     <button
+                      type="button"
                       key={pt.value}
                       onClick={() => setField("projectType", pt.value)}
                       className={`px-3 py-3 font-oswald text-xs font-bold uppercase tracking-wider border-[3px] border-black m-[-1.5px] relative transition-colors ${
@@ -314,11 +365,11 @@ export function InquiryForm() {
 
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project Description
+                  Project description
                 </label>
                 <textarea
                   className="input-brutal min-h-[120px] resize-none"
-                  placeholder="Describe your project, target audience, and creative direction..."
+                  placeholder="Goals, users, integrations, and constraints…"
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
                 />
@@ -326,7 +377,6 @@ export function InquiryForm() {
             </div>
           )}
 
-          {/* Step 2: Details */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
@@ -336,6 +386,7 @@ export function InquiryForm() {
                 <div className="flex flex-wrap gap-2">
                   {deliverableOptions.map((d) => (
                     <button
+                      type="button"
                       key={d}
                       onClick={() => toggleDeliverable(d)}
                       className={`px-3 py-2 font-inter text-xs border-[3px] border-black transition-colors ${
@@ -352,7 +403,7 @@ export function InquiryForm() {
 
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Target Deadline
+                  Target deadline
                 </label>
                 <input
                   type="date"
@@ -364,18 +415,19 @@ export function InquiryForm() {
 
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Visual References
+                  Links &amp; references
                 </label>
                 <div className="flex gap-2 mb-3">
                   <input
                     type="text"
                     className="input-brutal flex-1"
-                    placeholder="Paste image URL..."
+                    placeholder="Figma, repo, or doc URL…"
                     value={refInput}
                     onChange={(e) => setRefInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addReference()}
                   />
                   <button
+                    type="button"
                     onClick={addReference}
                     className="btn-brutal btn-brutal-black px-4"
                   >
@@ -392,7 +444,7 @@ export function InquiryForm() {
                         <span className="font-inter text-[10px] truncate max-w-[200px]">
                           {ref}
                         </span>
-                        <button onClick={() => removeReference(i)}>
+                        <button type="button" onClick={() => removeReference(i)}>
                           <X size={12} />
                         </button>
                       </div>
@@ -403,16 +455,16 @@ export function InquiryForm() {
             </div>
           )}
 
-          {/* Step 3: Budget */}
           {step === 2 && (
             <div className="space-y-6">
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Budget Range
+                  Budget range
                 </label>
                 <div className="space-y-0 border-[3px] border-black">
                   {budgetRanges.map((br) => (
                     <button
+                      type="button"
                       key={br.value}
                       onClick={() => setField("budget", br.value)}
                       className={`w-full text-left px-4 py-3 border-b-[3px] border-black last:border-b-0 font-oswald text-sm uppercase tracking-wider transition-colors ${
@@ -429,11 +481,12 @@ export function InquiryForm() {
 
               <div>
                 <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Rights Usage
+                  Engagement / terms
                 </label>
                 <div className="grid grid-cols-1 gap-0 border-[3px] border-black">
                   {rightsOptions.map((ro) => (
                     <button
+                      type="button"
                       key={ro.value}
                       onClick={() => setField("rightsUsage", ro.value)}
                       className={`text-left px-4 py-3 border-b-[3px] border-black last:border-b-0 font-oswald text-sm uppercase tracking-wider transition-colors ${
@@ -450,11 +503,10 @@ export function InquiryForm() {
             </div>
           )}
 
-          {/* Step 4: Review */}
           {step === 3 && (
             <div className="space-y-4">
               <h3 className="font-oswald text-xl font-bold uppercase tracking-tight mb-4">
-                REVIEW YOUR INQUIRY
+                Review your inquiry
               </h3>
               <div className="border-[3px] border-black">
                 <ReviewRow label="Title" value={form.title} />
@@ -462,7 +514,7 @@ export function InquiryForm() {
                   label="Type"
                   value={
                     projectTypes.find((p) => p.value === form.projectType)
-                      ?.label || ""
+                      ?.label || "—"
                   }
                 />
                 <ReviewRow
@@ -482,21 +534,21 @@ export function InquiryForm() {
                   label="Budget"
                   value={
                     budgetRanges.find((b) => b.value === form.budget)?.label ||
-                    ""
+                    "—"
                   }
                 />
                 <ReviewRow
-                  label="Rights"
+                  label="Engagement"
                   value={
                     rightsOptions.find((r) => r.value === form.rightsUsage)
-                      ?.label || ""
+                      ?.label || "—"
                   }
                 />
                 <ReviewRow
-                  label="References"
+                  label="Links"
                   value={
                     form.visualReferences.length > 0
-                      ? `${form.visualReferences.length} reference(s)`
+                      ? `${form.visualReferences.length} link(s)`
                       : "—"
                   }
                 />
@@ -504,9 +556,9 @@ export function InquiryForm() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8">
+          <div className="flex items-center justify-between mt-8 gap-2 flex-wrap">
             <button
+              type="button"
               onClick={() => setStep(Math.max(0, step - 1))}
               disabled={step === 0}
               className={`btn-brutal flex items-center gap-2 ${
@@ -522,43 +574,55 @@ export function InquiryForm() {
             <div className="flex gap-3">
               {step < 3 && (
                 <button
+                  type="button"
                   onClick={handleSaveDraft}
-                  disabled={createMutation.isPending || !form.title}
+                  disabled={!saveOrCopyEnabled}
                   className="btn-brutal flex items-center gap-2 bg-white border-[3px] border-black"
                 >
                   <Save size={16} />
-                  {createMutation.isPending ? "SAVING..." : "SAVE DRAFT"}
+                  {draftCopied ? "COPIED" : "COPY BRIEF"}
                 </button>
               )}
               {step < 3 ? (
                 <button
-                  onClick={() => setStep(step + 1)}
-                  className="btn-brutal btn-brutal-yellow flex items-center gap-2"
+                  type="button"
+                  onClick={() => {
+                    if (!canAdvance) return;
+                    setStep(step + 1);
+                  }}
+                  disabled={!canAdvance}
+                  className={`btn-brutal flex items-center gap-2 ${
+                    canAdvance
+                      ? "btn-brutal-yellow"
+                      : "opacity-30 cursor-not-allowed"
+                  }`}
                 >
                   NEXT
                   <ArrowRight size={16} />
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleSubmit}
-                  disabled={createMutation.isPending}
-                  className="btn-brutal btn-brutal-yellow flex items-center gap-2"
+                  disabled={!canAdvance}
+                  className={`btn-brutal flex items-center gap-2 ${
+                    canAdvance
+                      ? "btn-brutal-yellow"
+                      : "opacity-30 cursor-not-allowed"
+                  }`}
                 >
                   <Send size={16} />
-                  {createMutation.isPending
-                    ? "SUBMITTING..."
-                    : "SUBMIT INQUIRY"}
+                  SUBMIT
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Column - Decorative / Info */}
         <div className="lg:col-span-3 px-6 md:px-8 py-8 bg-[#1a1a1a] text-white">
           <div className="mb-8">
             <h4 className="font-oswald text-xs font-bold uppercase tracking-[0.2em] text-[#F9FF00] mb-3">
-              Typical Timeline
+              Typical timeline
             </h4>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
@@ -566,11 +630,9 @@ export function InquiryForm() {
                   24h
                 </div>
                 <div>
-                  <p className="font-inter text-xs font-medium">
-                    Initial Response
-                  </p>
+                  <p className="font-inter text-xs font-medium">First reply</p>
                   <p className="font-inter text-[10px] text-white/50">
-                    Art director reviews your brief
+                    We confirm fit and next questions
                   </p>
                 </div>
               </div>
@@ -579,11 +641,9 @@ export function InquiryForm() {
                   48h
                 </div>
                 <div>
-                  <p className="font-inter text-xs font-medium">
-                    Artist Matching
-                  </p>
+                  <p className="font-inter text-xs font-medium">Estimate</p>
                   <p className="font-inter text-[10px] text-white/50">
-                    Matched with ideal illustrator
+                    Rough scope, options, and timeline
                   </p>
                 </div>
               </div>
@@ -592,11 +652,9 @@ export function InquiryForm() {
                   7d
                 </div>
                 <div>
-                  <p className="font-inter text-xs font-medium">
-                    First Concepts
-                  </p>
+                  <p className="font-inter text-xs font-medium">Kickoff</p>
                   <p className="font-inter text-[10px] text-white/50">
-                    Initial sketches presented
+                    When you are ready to align on a plan
                   </p>
                 </div>
               </div>
@@ -612,6 +670,16 @@ export function InquiryForm() {
               <br />
               {siteConfig.domain}
             </p>
+            {waBase ? (
+              <a
+                href={waBase}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex font-oswald text-xs font-bold uppercase tracking-wider text-[#F9FF00] underline"
+              >
+                WhatsApp
+              </a>
+            ) : null}
           </div>
         </div>
       </div>

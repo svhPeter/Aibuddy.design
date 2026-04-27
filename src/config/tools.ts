@@ -4,7 +4,6 @@ export type ToolEntry = {
   name: string;
   description: string;
   badge: string;
-  access: "public" | "account";
 };
 
 export const toolsCatalog: readonly ToolEntry[] = [
@@ -15,7 +14,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Shrink JPG, PNG, or WebP in your browser — quality slider, before/after size, instant download.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "image-enlarger",
@@ -24,7 +22,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Increase image dimensions with clean in-browser processing — fast and private.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "image-converter",
@@ -33,7 +30,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Convert JPG, PNG, or WebP in your browser — pick format, optional quality, instant download.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "social-resize",
@@ -42,7 +38,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Resize images for social presets — fit modes, clean exports, instant download.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "watermark-tool",
@@ -51,7 +46,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Add text or logo watermarks with opacity and placement controls — preview and export.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "jpg-pdf-tool",
@@ -59,7 +53,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     name: "JPG ↔ PDF",
     description: "Merge images into one PDF or export PDF pages to JPG — local and private.",
     badge: "Free",
-    access: "public",
   },
   {
     id: "ai-caption-generator",
@@ -68,7 +61,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Generate caption options, CTA, and hashtags for Instagram, TikTok, LinkedIn, or X.",
     badge: "AI",
-    access: "public",
   },
   {
     id: "product-description-generator",
@@ -77,7 +69,6 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Generate short + long product copy, feature bullets, and a CTA from a few inputs.",
     badge: "AI",
-    access: "public",
   },
   {
     id: "prompt-enhancer",
@@ -86,16 +77,14 @@ export const toolsCatalog: readonly ToolEntry[] = [
     description:
       "Turn rough prompts into polished, model-ready text with negatives and tags.",
     badge: "AI",
-    access: "public",
   },
   {
-    id: "image-to-prompt",
-    href: "/tools/image-to-prompt",
-    name: "Image to Prompt",
+    id: "currency-converter",
+    href: "/tools/currency-converter",
+    name: "Currency Converter",
     description:
-      "Turn a reference image into prompts for AI generators — short, detailed, negatives, and tags.",
-    badge: "Sign in required",
-    access: "account",
+      "Convert amounts with live ECB-based rates — public API, no account, good for search and travel math.",
+    badge: "Free · SEO",
   },
 ] as const;
 

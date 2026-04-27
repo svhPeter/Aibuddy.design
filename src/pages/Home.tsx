@@ -32,15 +32,11 @@ export default function Home() {
               Navigate
             </h4>
             <div className="space-y-2">
-              {["Work", "Process", "Services", "Inquiry", "Dashboard"].map(
+              {["Work", "Process", "Services", "Inquiry", "Tools"].map(
                 (item) => (
                   <a
                     key={item}
-                    href={
-                      item === "Dashboard"
-                        ? "/dashboard"
-                        : `#${item.toLowerCase()}`
-                    }
+                    href={item === "Tools" ? "/tools" : `#${item.toLowerCase()}`}
                     className="block font-inter text-sm text-white/70 hover:text-[#F9FF00] transition-colors"
                   >
                     {item}
