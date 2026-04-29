@@ -8,99 +8,106 @@ import {
 } from "@/lib/inquiry-brief";
 import {
   Send,
-  Save,
-  ArrowRight,
-  ArrowLeft,
   CheckCircle,
-  ImagePlus,
-  X,
   Mail,
   MessageCircle,
   Copy,
 } from "lucide-react";
 
-const projectTypes = [
-  { value: "web", label: "WEB & PRODUCT" },
-  { value: "mobile", label: "MOBILE" },
-  { value: "ai", label: "AI & AUTOMATION" },
-  { value: "design", label: "DESIGN & UX" },
-  { value: "infra", label: "DEVOPS & INFRA" },
-  { value: "other", label: "OTHER" },
+const PROJECT_TYPE_OPTIONS = [
+  { value: "landing", label: "Landing page" },
+  { value: "mvp", label: "MVP / Web app" },
+  { value: "mobile_flutter", label: "Mobile app (Flutter)" },
+  { value: "saas", label: "SaaS product" },
+  { value: "ai", label: "AI integration" },
+  { value: "three_d", label: "3D / interactive web" },
+  { value: "shoppos_license", label: "Product licensing (ShopPOS)" },
+  { value: "custom", label: "Custom development" },
+  { value: "unsure", label: "Not sure yet" },
 ] as const;
 
-const budgetRanges = [
-  { value: "under5k", label: "UNDER $5,000" },
-  { value: "5to10k", label: "$5,000 — $10,000" },
-  { value: "10to25k", label: "$10,000 — $25,000" },
-  { value: "25to50k", label: "$25,000 — $50,000" },
-  { value: "over50k", label: "OVER $50,000" },
-  { value: "undisclosed", label: "PREFER NOT TO SAY" },
+const TIMELINE_OPTIONS = [
+  { value: "asap_week", label: "ASAP (this week)" },
+  { value: "within_month", label: "Within 1 month" },
+  { value: "one_to_three", label: "1–3 months" },
+  { value: "three_plus", label: "3+ months / exploring" },
 ] as const;
 
-const rightsOptions = [
-  { value: "project", label: "PROJECT-BASED" },
-  { value: "retainer", label: "RETAINER / ONGOING" },
-  { value: "license", label: "LICENSE & IP" },
-  { value: "workForHire", label: "WORK FOR HIRE" },
-  { value: "toBeDiscussed", label: "TO BE DISCUSSED" },
-] as const;
-
-const deliverableOptions = [
-  "UI / design system",
-  "Web frontend",
-  "Mobile app",
-  "API / backend",
-  "AI integration",
-  "DevOps & hosting",
-  "Strategy / copy",
+const BUDGET_OPTIONS = [
+  { value: "under_500", label: "Under $500" },
+  { value: "500_2000", label: "$500 – $2,000" },
+  { value: "2000_5000", label: "$2,000 – $5,000" },
+  { value: "5000_10000", label: "$5,000 – $10,000" },
+  { value: "10000_plus", label: "$10,000+" },
+  { value: "discuss", label: "Not sure / open to discuss" },
 ] as const;
 
 type FormData = {
-  title: string;
+  name: string;
+  email: string;
+  company: string;
   projectType: string;
-  description: string;
-  deliverables: string[];
-  deadline: string;
+  timeline: string;
   budget: string;
-  rightsUsage: string;
-  visualReferences: string[];
+  goal: string;
+  extras: string;
 };
 
 const initialForm: FormData = {
-  title: "",
+  name: "",
+  email: "",
+  company: "",
   projectType: "",
-  description: "",
-  deliverables: [],
-  deadline: "",
-  budget: "undisclosed",
-  rightsUsage: "toBeDiscussed",
-  visualReferences: [],
+  timeline: "",
+  budget: "",
+  goal: "",
+  extras: "",
 };
 
+function validateEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export function InquiryForm() {
-  const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(initialForm);
   const [submitted, setSubmitted] = useState(false);
-  const [refInput, setRefInput] = useState("");
+  const [validationMessage, setValidationMessage] = useState("");
+  const [transportError, setTransportError] = useState("");
   const [draftCopied, setDraftCopied] = useState(false);
 
   const waBase = useMemo(() => getWhatsappBaseUrl(), []);
 
+  const projectTypeLabel =
+    PROJECT_TYPE_OPTIONS.find((p) => p.value === form.projectType)?.label ||
+    "";
+
+  const timelineLabel =
+    TIMELINE_OPTIONS.find((t) => t.value === form.timeline)?.label || "";
+
+  const budgetLabel =
+    BUDGET_OPTIONS.find((b) => b.value === form.budget)?.label || "";
+
   const briefInput = useMemo(
     () => ({
-      title: form.title,
-      projectTypeLabel:
-        projectTypes.find((p) => p.value === form.projectType)?.label || "—",
-      description: form.description,
-      deliverables: form.deliverables,
-      deadline: form.deadline,
-      budgetLabel:
-        budgetRanges.find((b) => b.value === form.budget)?.label || "—",
-      rightsLabel:
-        rightsOptions.find((r) => r.value === form.rightsUsage)?.label || "—",
-      visualReferences: form.visualReferences,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      company: form.company.trim(),
+      projectTypeLabel,
+      timelineLabel,
+      budgetLabel,
+      goal: form.goal,
+      extras: form.extras,
     }),
-    [form]
+    [
+      form.name,
+      form.email,
+      form.company,
+      form.goal,
+      form.extras,
+      projectTypeLabel,
+      timelineLabel,
+      budgetLabel,
+    ]
   );
 
   const inquiryBody = useMemo(
@@ -112,10 +119,10 @@ export function InquiryForm() {
     () =>
       buildInquiryMailto(
         siteConfig.links.email,
-        `AIBuddy inquiry: ${form.title || "New project"}`,
+        `AIBuddy inquiry — ${form.name.trim() || "Project"}`,
         inquiryBody
       ),
-    [inquiryBody, form.title]
+    [inquiryBody, form.name]
   );
 
   const whatsappHref = useMemo(() => {
@@ -130,57 +137,62 @@ export function InquiryForm() {
     []
   );
 
-  const toggleDeliverable = (d: string) => {
-    setForm((prev) => ({
-      ...prev,
-      deliverables: prev.deliverables.includes(d)
-        ? prev.deliverables.filter((x) => x !== d)
-        : [...prev.deliverables, d],
-    }));
-  };
+  const isValid =
+    form.name.trim().length > 0 &&
+    validateEmail(form.email) &&
+    form.projectType.length > 0 &&
+    form.timeline.length > 0 &&
+    form.budget.length > 0 &&
+    form.goal.trim().length > 0;
 
-  const addReference = () => {
-    if (refInput.trim()) {
-      setForm((prev) => ({
-        ...prev,
-        visualReferences: [...prev.visualReferences, refInput.trim()],
-      }));
-      setRefInput("");
+  const runSubmit = async () => {
+    setTransportError("");
+    setValidationMessage("");
+    if (!form.name.trim()) {
+      setValidationMessage("Enter your name.");
+      return;
     }
-  };
-
-  const removeReference = (idx: number) => {
-    setForm((prev) => ({
-      ...prev,
-      visualReferences: prev.visualReferences.filter((_, i) => i !== idx),
-    }));
-  };
-
-  const handleSubmit = () => {
-    if (!form.title || !form.projectType) return;
+    if (!validateEmail(form.email)) {
+      setValidationMessage("Enter a valid email address.");
+      return;
+    }
+    if (!form.projectType) {
+      setValidationMessage("Select a project type.");
+      return;
+    }
+    if (!form.timeline) {
+      setValidationMessage("Select a timeline.");
+      return;
+    }
+    if (!form.budget) {
+      setValidationMessage("Select a budget range.");
+      return;
+    }
+    if (!form.goal.trim()) {
+      setValidationMessage("Describe what this should accomplish.");
+      return;
+    }
     setSubmitted(true);
   };
 
   const handleCopyBrief = async () => {
+    if (!isValid) {
+      setValidationMessage("Fill all required fields before copying.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(inquiryBody);
+      setDraftCopied(true);
+      setTimeout(() => setDraftCopied(false), 2500);
+      setTransportError("");
     } catch {
-      return;
+      setTransportError(
+        `Something broke. Email me directly: ${siteConfig.links.email}`
+      );
     }
   };
 
-  const handleSaveDraft = () => {
-    if (!form.title) return;
-    void (async () => {
-      try {
-        await navigator.clipboard.writeText(inquiryBody);
-        setDraftCopied(true);
-        setTimeout(() => setDraftCopied(false), 2500);
-      } catch {
-        // ignore
-      }
-    })();
-  };
+  const contactEmailPhrase = useMemo(() => siteConfig.links.email, []);
 
   if (submitted) {
     return (
@@ -188,19 +200,12 @@ export function InquiryForm() {
         <div className="px-6 md:px-12 lg:px-16 max-w-2xl mx-auto text-center">
           <div className="border-[3px] border-black p-12">
             <CheckCircle size={48} className="mx-auto mb-6 text-[#F9FF00]" />
-            <h3 className="font-oswald text-3xl md:text-4xl font-bold uppercase tracking-[-0.02em] mb-4">
-              BRIEF READY
-            </h3>
-            <p className="font-inter text-sm leading-relaxed text-[#1a1a1a]/70 mb-8">
-              Send the same project brief through WhatsApp or email — or copy
-              the text. No account is required. We will reply at{" "}
-              <a
-                className="underline font-semibold"
-                href={`mailto:${siteConfig.links.email}`}
-              >
-                {siteConfig.links.email}
-              </a>
-              .
+            <p className="font-inter text-base md:text-lg leading-relaxed text-[#1a1a1a] mb-6">
+              Got it. I&apos;ll respond within 24 hours.
+            </p>
+            <p className="font-inter text-xs text-[#1a1a1a]/60 mb-8">
+              Send this brief by WhatsApp or email (same outline), or copy the
+              text — no account needed.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
               {whatsappHref ? (
@@ -211,7 +216,7 @@ export function InquiryForm() {
                   className="btn-brutal btn-brutal-yellow inline-flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={18} />
-                  WHATSAPP
+                  WhatsApp
                 </a>
               ) : null}
               <a
@@ -219,7 +224,7 @@ export function InquiryForm() {
                 className="btn-brutal btn-brutal-black inline-flex items-center justify-center gap-2"
               >
                 <Mail size={18} />
-                EMAIL
+                Email
               </a>
               <button
                 type="button"
@@ -227,16 +232,21 @@ export function InquiryForm() {
                 className="btn-brutal flex items-center justify-center gap-2 border-[3px] border-black bg-white"
               >
                 <Copy size={18} />
-                COPY BRIEF
+                Copy brief
               </button>
             </div>
+            {transportError ? (
+              <p className="font-inter text-sm text-[#FF0004] mt-6">
+                {transportError}
+              </p>
+            ) : null}
             <div className="mt-8">
               <button
                 type="button"
                 onClick={() => {
                   setSubmitted(false);
                   setForm(initialForm);
-                  setStep(0);
+                  setTransportError("");
                 }}
                 className="font-oswald text-xs font-bold uppercase tracking-widest underline"
               >
@@ -248,17 +258,6 @@ export function InquiryForm() {
       </section>
     );
   }
-
-  const steps = [
-    { label: "PROJECT", num: 0 },
-    { label: "DETAILS", num: 1 },
-    { label: "BUDGET", num: 2 },
-    { label: "REVIEW", num: 3 },
-  ];
-
-  const canAdvance =
-    form.title.trim().length > 0 && form.projectType.length > 0;
-  const saveOrCopyEnabled = canAdvance;
 
   return (
     <section id="inquiry" className="border-b-[3px] border-black">
@@ -274,45 +273,21 @@ export function InquiryForm() {
       <div className="grid grid-cols-1 lg:grid-cols-12">
         <div className="lg:col-span-3 border-r-[3px] border-black border-b-[3px] lg:border-b-0 px-6 md:px-8 py-8 bg-[#fafafa]">
           <h3 className="font-oswald text-lg font-bold uppercase tracking-tight mb-4">
-            INSTRUCTIONS
+            Instructions
           </h3>
           <p className="font-inter text-xs leading-relaxed text-[#1a1a1a]/70 mb-6">
-            Work through the steps, then on submit we will prepare your brief for
-            WhatsApp and email. You can also copy the brief to your clipboard at
-            any time after the project title and type are set.
+            Answer each required field below. Submit opens your drafted brief —
+            choose WhatsApp, email, or copy. You can also copy the brief at any
+            time once everything required is filled in.
           </p>
 
-          <div className="space-y-0">
-            {steps.map((s) => (
-              <button
-                type="button"
-                key={s.num}
-                onClick={() => setStep(s.num)}
-                className={`w-full text-left px-4 py-3 border-[3px] border-black mb-[-3px] relative transition-colors ${
-                  step === s.num
-                    ? "bg-[#F9FF00] z-10"
-                    : step > s.num
-                    ? "bg-[#1a1a1a] text-white"
-                    : "bg-white hover:bg-[#F9FF00]/50"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-oswald text-sm font-bold uppercase tracking-wider">
-                    {s.label}
-                  </span>
-                  {step > s.num && <CheckCircle size={14} />}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 border-[3px] border-black p-4 bg-white">
+          <div className="border-[3px] border-black p-4 bg-white">
             <h4 className="font-oswald text-xs font-bold uppercase tracking-widest mb-2">
-              NEED HELP?
+              Need help?
             </h4>
             <p className="font-inter text-[11px] leading-relaxed text-[#1a1a1a]/60">
-              Use the chat widget, email {siteConfig.links.email}, or finish the
-              form and send the brief on WhatsApp or by email in the last step.
+              Use the chat widget, email {siteConfig.links.email}, or send the
+              brief from WhatsApp or email using the buttons after submit.
             </p>
           </div>
         </div>
@@ -321,302 +296,188 @@ export function InquiryForm() {
           <div className="mb-6 bg-[#F9FF00] border-[3px] border-black p-4">
             <p className="font-inter text-sm">
               <strong className="font-oswald uppercase">Note:</strong> No
-              account needed — use WhatsApp or email from the last step, or copy
-              the brief.
+              account needed — after submit use WhatsApp, email, or copy the
+              brief. Even if your project is outside the listed categories, you
+              can still share it here.
             </p>
           </div>
 
-          {step === 0 && (
-            <div className="space-y-6">
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project title *
-                </label>
-                <input
-                  type="text"
-                  className="input-brutal"
-                  placeholder="e.g. Customer portal MVP, AI support workflow"
-                  value={form.title}
-                  onChange={(e) => setField("title", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project type *
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-0 border-[3px] border-black">
-                  {projectTypes.map((pt) => (
-                    <button
-                      type="button"
-                      key={pt.value}
-                      onClick={() => setField("projectType", pt.value)}
-                      className={`px-3 py-3 font-oswald text-xs font-bold uppercase tracking-wider border-[3px] border-black m-[-1.5px] relative transition-colors ${
-                        form.projectType === pt.value
-                          ? "bg-[#F9FF00] z-10"
-                          : "bg-white hover:bg-[#F9FF00]/30"
-                      }`}
-                    >
-                      {pt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Project description
-                </label>
-                <textarea
-                  className="input-brutal min-h-[120px] resize-none"
-                  placeholder="Goals, users, integrations, and constraints…"
-                  value={form.description}
-                  onChange={(e) => setField("description", e.target.value)}
-                />
-              </div>
+          <div className="space-y-6">
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Name *
+              </label>
+              <input
+                type="text"
+                autoComplete="name"
+                className="input-brutal"
+                placeholder="Your name"
+                value={form.name}
+                onChange={(e) => setField("name", e.target.value)}
+              />
             </div>
-          )}
 
-          {step === 1 && (
-            <div className="space-y-6">
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Deliverables
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {deliverableOptions.map((d) => (
-                    <button
-                      type="button"
-                      key={d}
-                      onClick={() => toggleDeliverable(d)}
-                      className={`px-3 py-2 font-inter text-xs border-[3px] border-black transition-colors ${
-                        form.deliverables.includes(d)
-                          ? "bg-[#1a1a1a] text-white"
-                          : "bg-white hover:bg-[#F9FF00]"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Target deadline
-                </label>
-                <input
-                  type="date"
-                  className="input-brutal"
-                  value={form.deadline}
-                  onChange={(e) => setField("deadline", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Links &amp; references
-                </label>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    className="input-brutal flex-1"
-                    placeholder="Figma, repo, or doc URL…"
-                    value={refInput}
-                    onChange={(e) => setRefInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addReference()}
-                  />
-                  <button
-                    type="button"
-                    onClick={addReference}
-                    className="btn-brutal btn-brutal-black px-4"
-                  >
-                    <ImagePlus size={18} />
-                  </button>
-                </div>
-                {form.visualReferences.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {form.visualReferences.map((ref, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1 bg-[#fafafa] border-[3px] border-black px-2 py-1"
-                      >
-                        <span className="font-inter text-[10px] truncate max-w-[200px]">
-                          {ref}
-                        </span>
-                        <button type="button" onClick={() => removeReference(i)}>
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                className="input-brutal"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setField("email", e.target.value)}
+              />
             </div>
-          )}
 
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Budget range
-                </label>
-                <div className="space-y-0 border-[3px] border-black">
-                  {budgetRanges.map((br) => (
-                    <button
-                      type="button"
-                      key={br.value}
-                      onClick={() => setField("budget", br.value)}
-                      className={`w-full text-left px-4 py-3 border-b-[3px] border-black last:border-b-0 font-oswald text-sm uppercase tracking-wider transition-colors ${
-                        form.budget === br.value
-                          ? "bg-[#F9FF00]"
-                          : "bg-white hover:bg-[#F9FF00]/30"
-                      }`}
-                    >
-                      {br.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Engagement / terms
-                </label>
-                <div className="grid grid-cols-1 gap-0 border-[3px] border-black">
-                  {rightsOptions.map((ro) => (
-                    <button
-                      type="button"
-                      key={ro.value}
-                      onClick={() => setField("rightsUsage", ro.value)}
-                      className={`text-left px-4 py-3 border-b-[3px] border-black last:border-b-0 font-oswald text-sm uppercase tracking-wider transition-colors ${
-                        form.rightsUsage === ro.value
-                          ? "bg-[#1a1a1a] text-white"
-                          : "bg-white hover:bg-[#1a1a1a]/5"
-                      }`}
-                    >
-                      {ro.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Company / role
+              </label>
+              <input
+                type="text"
+                className="input-brutal"
+                placeholder="(optional)"
+                value={form.company}
+                onChange={(e) => setField("company", e.target.value)}
+              />
             </div>
-          )}
 
-          {step === 3 && (
-            <div className="space-y-4">
-              <h3 className="font-oswald text-xl font-bold uppercase tracking-tight mb-4">
-                Review your inquiry
-              </h3>
-              <div className="border-[3px] border-black">
-                <ReviewRow label="Title" value={form.title} />
-                <ReviewRow
-                  label="Type"
-                  value={
-                    projectTypes.find((p) => p.value === form.projectType)
-                      ?.label || "—"
-                  }
-                />
-                <ReviewRow
-                  label="Description"
-                  value={form.description || "—"}
-                />
-                <ReviewRow
-                  label="Deliverables"
-                  value={
-                    form.deliverables.length > 0
-                      ? form.deliverables.join(", ")
-                      : "—"
-                  }
-                />
-                <ReviewRow label="Deadline" value={form.deadline || "—"} />
-                <ReviewRow
-                  label="Budget"
-                  value={
-                    budgetRanges.find((b) => b.value === form.budget)?.label ||
-                    "—"
-                  }
-                />
-                <ReviewRow
-                  label="Engagement"
-                  value={
-                    rightsOptions.find((r) => r.value === form.rightsUsage)
-                      ?.label || "—"
-                  }
-                />
-                <ReviewRow
-                  label="Links"
-                  value={
-                    form.visualReferences.length > 0
-                      ? `${form.visualReferences.length} link(s)`
-                      : "—"
-                  }
-                />
-              </div>
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Project type *
+              </label>
+              <select
+                className="input-brutal w-full bg-white appearance-none cursor-pointer pr-10"
+                value={form.projectType}
+                onChange={(e) => setField("projectType", e.target.value)}
+                aria-required
+              >
+                <option value="">Select…</option>
+                {PROJECT_TYPE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          <div className="flex items-center justify-between mt-8 gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setStep(Math.max(0, step - 1))}
-              disabled={step === 0}
-              className={`btn-brutal flex items-center gap-2 ${
-                step === 0
-                  ? "opacity-30 cursor-not-allowed"
-                  : "btn-brutal-black"
-              }`}
-            >
-              <ArrowLeft size={16} />
-              BACK
-            </button>
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Timeline *
+              </label>
+              <select
+                className="input-brutal w-full bg-white appearance-none cursor-pointer pr-10"
+                value={form.timeline}
+                onChange={(e) => setField("timeline", e.target.value)}
+                aria-required
+              >
+                <option value="">Select…</option>
+                {TIMELINE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <div className="flex gap-3">
-              {step < 3 && (
-                <button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  disabled={!saveOrCopyEnabled}
-                  className="btn-brutal flex items-center gap-2 bg-white border-[3px] border-black"
-                >
-                  <Save size={16} />
-                  {draftCopied ? "COPIED" : "COPY BRIEF"}
-                </button>
-              )}
-              {step < 3 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!canAdvance) return;
-                    setStep(step + 1);
-                  }}
-                  disabled={!canAdvance}
-                  className={`btn-brutal flex items-center gap-2 ${
-                    canAdvance
-                      ? "btn-brutal-yellow"
-                      : "opacity-30 cursor-not-allowed"
-                  }`}
-                >
-                  NEXT
-                  <ArrowRight size={16} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!canAdvance}
-                  className={`btn-brutal flex items-center gap-2 ${
-                    canAdvance
-                      ? "btn-brutal-yellow"
-                      : "opacity-30 cursor-not-allowed"
-                  }`}
-                >
-                  <Send size={16} />
-                  SUBMIT
-                </button>
-              )}
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Budget range *
+              </label>
+              <select
+                className="input-brutal w-full bg-white appearance-none cursor-pointer pr-10"
+                value={form.budget}
+                onChange={(e) => setField("budget", e.target.value)}
+                aria-required
+              >
+                <option value="">Select…</option>
+                {BUDGET_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Project goal *
+              </label>
+              <textarea
+                className="input-brutal min-h-[4.5rem] resize-none"
+                rows={3}
+                placeholder="What should this thing accomplish?"
+                value={form.goal}
+                onChange={(e) => setField("goal", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
+                Anything else?
+              </label>
+              <textarea
+                className="input-brutal min-h-[4.5rem] resize-none"
+                rows={3}
+                placeholder="Links, references, sketches, constraints..."
+                value={form.extras}
+                onChange={(e) => setField("extras", e.target.value)}
+              />
             </div>
           </div>
+
+          {validationMessage ? (
+            <p className="font-inter text-sm text-[#FF0004] mt-6">
+              {validationMessage}
+            </p>
+          ) : null}
+          {!validationMessage ? (
+            transportError ? (
+              <p className="font-inter text-sm text-[#FF0004] mt-6">
+                {transportError}
+              </p>
+            ) : null
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between mt-8 gap-3">
+            <button
+              type="button"
+              onClick={() => void handleCopyBrief()}
+              disabled={!isValid}
+              className={`btn-brutal flex items-center gap-2 bg-white border-[3px] border-black ${
+                !isValid ? "opacity-30 cursor-not-allowed" : ""
+              }`}
+            >
+              <Copy size={16} />
+              {draftCopied ? "Copied" : "Copy brief"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void runSubmit()}
+              disabled={!isValid}
+              className={`btn-brutal flex items-center gap-2 ${
+                isValid ? "btn-brutal-yellow" : "opacity-30 cursor-not-allowed"
+              }`}
+            >
+              <Send size={16} />
+              Send inquiry&nbsp;→
+            </button>
+          </div>
+
+          {!isValid ? (
+            <p className="font-inter text-[11px] text-[#1a1a1a]/50 mt-3">
+              If anything fails technically, email{" "}
+              <a
+                href={`mailto:${contactEmailPhrase}`}
+                className="underline font-medium"
+              >
+                {contactEmailPhrase}
+              </a>
+              .
+            </p>
+          ) : null}
         </div>
 
         <div className="lg:col-span-3 px-6 md:px-8 py-8 bg-[#1a1a1a] text-white">
@@ -684,20 +545,5 @@ export function InquiryForm() {
         </div>
       </div>
     </section>
-  );
-}
-
-function ReviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex border-b-[3px] border-black last:border-b-0">
-      <div className="w-1/3 px-4 py-3 bg-[#fafafa] border-r-[3px] border-black">
-        <span className="font-oswald text-xs font-bold uppercase tracking-wider text-[#1a1a1a]/50">
-          {label}
-        </span>
-      </div>
-      <div className="w-2/3 px-4 py-3">
-        <span className="font-inter text-sm">{value}</span>
-      </div>
-    </div>
   );
 }

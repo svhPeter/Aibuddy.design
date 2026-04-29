@@ -3,42 +3,39 @@ import { useEffect, useRef, useState } from "react";
 const steps = [
   {
     num: "01",
-    title: "BRIEFING",
-    desc: "Define the project scope, deliverables, timeline, and budget. Upload visual references and specify rights usage requirements.",
-    status: "INITIATE",
+    title: "Discovery call",
+    duration: "15 minutes · free",
+    description:
+      "We talk through your goals, timeline, and budget. No pitch, no pressure.",
     color: "yellow",
-    details: [
-      "Project type identification",
-      "Deliverable specification",
-      "Budget range selection",
-      "Rights usage agreement",
-    ],
+    details: ["Goals, timeline, budget", "No pitch, no pressure"],
   },
   {
     num: "02",
-    title: "CONCEPTING",
-    desc: "Our art directors review your brief and match you with the ideal illustrator from our roster. Initial sketches and mood boards presented.",
-    status: "MATCH",
+    title: "Scoped proposal",
+    duration: "Within 24 hours",
+    description:
+      "Fixed price. Fixed timeline. Clear deliverables. Sent in writing.",
     color: "red",
-    details: [
-      "Artist-Client matching",
-      "Mood board development",
-      "Initial sketch review",
-      "Direction approval",
-    ],
+    details: ["Fixed scope", "Clear deliverables"],
   },
   {
     num: "03",
-    title: "EXECUTION",
-    desc: "Full illustration production with structured review rounds. Final files delivered in all specified formats with complete usage rights.",
-    status: "DELIVER",
+    title: "Build phase",
+    duration: "Sprint-based",
+    description:
+      "Weekly demos, transparent progress, zero surprises along the way.",
     color: "yellow",
-    details: [
-      "Production & revisions",
-      "Quality assurance review",
-      "Final file delivery",
-      "Rights documentation",
-    ],
+    details: ["Weekly demos", "Transparent progress"],
+  },
+  {
+    num: "04",
+    title: "Ship & handover",
+    duration: "On agreed date",
+    description:
+      "Full code, full docs, deployed. You own everything.",
+    color: "red",
+    details: ["You own the code", "Deployed and documented"],
   },
 ];
 
@@ -74,16 +71,13 @@ export function Process() {
         {/* Sticky Left Column */}
         <div className="md:col-span-4 lg:col-span-3 border-r-[3px] border-black md:sticky md:top-0 md:h-screen flex flex-col justify-center px-6 md:px-10 py-12 md:py-0 bg-white">
           <span className="font-oswald text-xs font-bold uppercase tracking-[0.2em] text-[#FF0004] block mb-4">
-            How We Work
+            How it works
           </span>
           <h2 className="font-oswald text-4xl md:text-5xl font-bold uppercase tracking-[-0.03em] leading-[0.95] mb-6">
-            OUR
-            <br />
-            APPROACH
+            How working with me looks
           </h2>
           <p className="font-inter text-sm leading-relaxed text-[#1a1a1a]/70 mb-8">
-            A structured three-phase workflow designed to deliver exceptional
-            editorial illustration with zero friction.
+            Transparent. Fast. No surprises.
           </p>
           <div className="flex gap-2">
             {steps.map((_, i) => (
@@ -118,14 +112,14 @@ export function Process() {
                           : "bg-[#FF0004] text-white"
                       }`}
                     >
-                      {step.status}
+                      {step.duration}
                     </span>
                   </div>
                   <h3 className="font-oswald text-3xl md:text-4xl font-bold uppercase tracking-[-0.02em] mb-4">
                     {step.title}
                   </h3>
                   <p className="font-inter text-sm leading-relaxed text-[#1a1a1a]/70 max-w-md">
-                    {step.desc}
+                    {step.description}
                   </p>
                 </div>
                 <div className="flex flex-col justify-center">

@@ -1,54 +1,68 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 
+/* TODO: Add /public/work/shoppos.png (and verify cosmicweb, doctor-booking assets). */
 const projects = [
   {
     id: 1,
-    title: "DE STIJL ISSUE",
-    client: "LUXURY MAGAZINE",
-    category: "Editorial",
-    image: "/portfolio-1.jpg",
-    size: "tall",
+    name: "ShopPOS",
+    typeBadge: "SaaS · Available for licensing",
+    description:
+      "Multi-tenant POS & shop management SaaS for cafes and retail.",
+    highlights: [
+      "Multi-tenant architecture: deploy once, serve unlimited shops",
+      "Realtime updates via SSE, RBAC, audit logs, accounting integrations",
+      "Production-ready — currently licensed to early customers",
+    ],
+    stack: ["Next.js", "TypeScript", "Postgres", "Prisma", "SSE"],
+    image: "/work/shoppos.png",
+    primaryLink: {
+      url: "https://shop-pos-sand.vercel.app/",
+      label: "Live demo",
+    },
+    secondaryLink: {
+      url: "https://github.com/svhPeter/shop-pos-showcase",
+      label: "Showcase",
+    },
   },
   {
     id: 2,
-    title: "DECONSTRUCT FLUX",
-    client: "EXPERIMENTAL FORM",
-    category: "Brand Identity",
-    image: "/portfolio-2.jpg",
-    size: "tall",
+    name: "Cosmicweb",
+    typeBadge: "Personal · Open Source",
+    description:
+      "Interactive 3D solar system & space learning platform.",
+    highlights: [
+      "Real-time motion simulations with custom shaders",
+      "Mobile-optimized 3D rendering — performant on low-end devices",
+      "Built because I love astronomy and wanted to make space tangible",
+    ],
+    stack: ["Next.js", "Three.js", "TypeScript", "Custom Shaders"],
+    image: "/work/cosmicweb.png",
+    primaryLink: {
+      url: "https://cosmicweb-nine.vercel.app",
+      label: "Live demo",
+    },
+    secondaryLink: {
+      url: "https://github.com/svhPeter/cosmicweb",
+      label: "Source",
+    },
   },
   {
     id: 3,
-    title: "STRUCTURAL ELEGANCE",
-    client: "VOGUE ITALIA",
-    category: "Fashion Illustration",
-    image: "/portfolio-3.jpg",
-    size: "tall",
-  },
-  {
-    id: 4,
-    title: "GRID & FORM",
-    client: "SWISS DESIGN WEEK",
-    category: "Packaging",
-    image: "/portfolio-4.jpg",
-    size: "wide",
-  },
-  {
-    id: 5,
-    title: "IMPACT MOTION",
-    client: "KINETIC STUDIOS",
-    category: "Motion Design",
-    image: "/portfolio-5.jpg",
-    size: "tall",
-  },
-  {
-    id: 6,
-    title: "PRISM WILD",
-    client: "NATURE PRESS",
-    category: "Publishing",
-    image: "/portfolio-6.jpg",
-    size: "tall",
+    name: "Doctor Booking",
+    typeBadge: "Mobile · MVP",
+    description: "Cross-platform appointment booking app.",
+    highlights: [
+      "Single Flutter codebase shipping to iOS and Android",
+      "Booking flow, scheduling, doctor profiles",
+    ],
+    stack: ["Flutter", "Dart"],
+    image: "/work/doctor-booking.png",
+    primaryLink: {
+      url: "https://github.com/svhPeter/doctor-booking-mvp",
+      label: "Source",
+    },
+    secondaryLink: null,
   },
 ];
 
@@ -64,11 +78,11 @@ export function Portfolio() {
               Selected Work
             </span>
             <h2 className="font-oswald text-4xl md:text-6xl font-bold uppercase tracking-[-0.03em]">
-              PORTFOLIO
+              Featured work
             </h2>
           </div>
           <span className="hidden md:block font-oswald text-sm uppercase tracking-widest">
-            01—06
+            01—03
           </span>
         </div>
       </div>
@@ -78,22 +92,14 @@ export function Portfolio() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className={`relative border-[3px] border-black cursor-pointer overflow-hidden group ${
-                project.size === "wide" ? "md:col-span-2" : ""
-              }`}
+              className="relative border-[3px] border-black cursor-pointer overflow-hidden group"
               onMouseEnter={() => setHoveredId(project.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
-              <div
-                className={`relative overflow-hidden ${
-                  project.size === "wide"
-                    ? "aspect-[2/1]"
-                    : "aspect-[3/4]"
-                }`}
-              >
+              <div className="relative overflow-hidden aspect-[3/4]">
                 <img
                   src={project.image}
-                  alt={project.title}
+                  alt={project.name}
                   className={`w-full h-full object-cover transition-all duration-500 ${
                     hoveredId === project.id
                       ? "scale-105 saturate-0"
@@ -117,14 +123,39 @@ export function Portfolio() {
                         : "opacity-0 translate-y-4"
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
                         <h3 className="font-oswald text-xl md:text-2xl font-bold uppercase text-white leading-tight">
-                          {project.title}
+                          {project.name}
                         </h3>
-                        <p className="font-inter text-xs text-white/80 mt-1 uppercase tracking-wider">
-                          {project.client}
+                        <p className="font-inter text-xs text-white/90 mt-1 leading-snug">
+                          {project.description}
                         </p>
+                        <p className="font-inter text-[10px] text-white/80 mt-2">
+                          {project.stack.join(" · ")}
+                        </p>
+                        <div className="flex flex-wrap gap-3 mt-3">
+                          <a
+                            href={project.primaryLink.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-oswald text-xs font-bold uppercase text-white underline underline-offset-2 shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {project.primaryLink.label}
+                          </a>
+                          {project.secondaryLink ? (
+                            <a
+                              href={project.secondaryLink.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-oswald text-xs font-bold uppercase text-white underline underline-offset-2 shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {project.secondaryLink.label}
+                            </a>
+                          ) : null}
+                        </div>
                       </div>
                       <ArrowUpRight className="text-white flex-shrink-0" size={24} />
                     </div>
@@ -136,13 +167,20 @@ export function Portfolio() {
                 )}
               </div>
               {/* Label bar */}
-              <div className="border-t-[3px] border-black bg-white px-3 py-2 flex items-center justify-between">
-                <span className="font-oswald text-xs font-bold uppercase tracking-wider">
-                  {project.category}
-                </span>
-                <span className="font-inter text-[10px] uppercase text-[#1a1a1a]/50">
-                  {String(project.id).padStart(2, "0")}
-                </span>
+              <div className="border-t-[3px] border-black bg-white px-3 py-2">
+                <p className="font-oswald text-xs font-bold uppercase tracking-wider">
+                  {project.typeBadge}
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {project.highlights.map((line) => (
+                    <li
+                      key={line}
+                      className="font-inter text-[10px] text-[#1a1a1a]/80 leading-snug border-l-[2px] border-[#FF0004] pl-2"
+                    >
+                      {line}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           ))}

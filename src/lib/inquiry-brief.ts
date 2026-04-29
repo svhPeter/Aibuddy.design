@@ -1,47 +1,43 @@
 /** Build the plain-text brief for email, WhatsApp, and clipboard. */
 
 export type InquiryBriefInput = {
-  title: string;
+  name: string;
+  email: string;
+  company: string;
   projectTypeLabel: string;
-  description: string;
-  deliverables: string[];
-  deadline: string;
+  timelineLabel: string;
   budgetLabel: string;
-  rightsLabel: string;
-  visualReferences: string[];
+  goal: string;
+  extras: string;
 };
 
 export function buildInquiryBody(input: InquiryBriefInput): string {
   const {
-    title,
+    name,
+    email,
+    company,
     projectTypeLabel,
-    description,
-    deliverables,
-    deadline,
+    timelineLabel,
     budgetLabel,
-    rightsLabel,
-    visualReferences,
+    goal,
+    extras,
   } = input;
+
   const lines: string[] = [
     "AIBUDDY — project inquiry",
     "—".repeat(28),
-    `Title: ${title}`,
-    `Type: ${projectTypeLabel}`,
+    `Name: ${name}`,
+    `Email: ${email}`,
+    `Company / role: ${company.trim() || "—"}`,
+    `Project type: ${projectTypeLabel}`,
+    `Timeline: ${timelineLabel}`,
+    `Budget: ${budgetLabel}`,
     "",
-    "Description:",
-    description.trim() || "—",
+    "Project goal:",
+    goal.trim() || "—",
     "",
-    "Deliverables:",
-    deliverables.length > 0 ? deliverables.join(", ") : "—",
-    "",
-    `Target deadline: ${deadline || "—"}`,
-    `Budget: ${budgetLabel || "—"}`,
-    `Engagement / terms: ${rightsLabel || "—"}`,
-    "",
-    "Links & references:",
-    visualReferences.length > 0
-      ? visualReferences.map((u) => `• ${u}`).join("\n")
-      : "—",
+    "Anything else:",
+    extras.trim() || "—",
     "",
     "—",
     "Sent from aibuddy.design/inquiry",

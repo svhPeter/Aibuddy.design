@@ -4,51 +4,53 @@ import { CheckCircle2, Clock, Circle } from "lucide-react";
 const services = [
   {
     id: 1,
-    name: "WEB DEVELOPMENT",
-    discipline: "Next.js / React / TypeScript",
+    name: "Full-Stack Web Apps",
+    discipline: "Modern web apps with auth, dashboards, and APIs.",
     status: "Available",
-    availability: "Now",
-    specialties: ["Dashboards", "Landing Pages", "APIs"],
+    availability: "2–4 weeks",
+    specialties: ["SaaS founders", "Agencies", "Growing businesses"],
   },
   {
     id: 2,
-    name: "BACKEND & DATABASES",
-    discipline: "Node.js / Postgres / Drizzle",
-    status: "Booked",
-    availability: "Limited",
-    specialties: ["Auth", "Payments", "Data Modeling"],
+    name: "Mobile Apps (Flutter)",
+    discipline: "iOS and Android from a single codebase.",
+    status: "Available",
+    availability: "2–3 weeks",
+    specialties: ["Startups validating on mobile-first markets"],
   },
   {
     id: 3,
-    name: "MOBILE APPS",
-    discipline: "React Native / iOS / Android",
+    name: "SaaS Products",
+    discipline: "Multi-tenant systems with billing, RBAC, and scale.",
     status: "Available",
-    availability: "Now",
-    specialties: ["Push", "Offline", "Performance"],
+    availability: "3–6 weeks",
+    specialties: ["Founders launching subscription products"],
   },
   {
     id: 4,
-    name: "AI INTEGRATION",
-    discipline: "LLMs / RAG / Vision",
-    status: "Limited",
+    name: "AI Integration",
+    discipline:
+      "LLM features, agents, and automation in your product.",
+    status: "Available",
     availability: "1–2 weeks",
-    specialties: ["Chatbots", "Agents", "Automations"],
+    specialties: ["Teams adding intelligence to existing products"],
   },
   {
     id: 5,
-    name: "UI/UX DESIGN",
-    discipline: "Product UI / Design Systems",
+    name: "3D & Interactive Web",
+    discipline: "Three.js, custom shaders, immersive experiences.",
     status: "Available",
-    availability: "Now",
-    specialties: ["Wireframes", "Design Tokens", "Prototypes"],
+    availability: "Scoped per project",
+    specialties: ["Brands that need to stand out visually"],
   },
   {
     id: 6,
-    name: "MAINTENANCE & SUPPORT",
-    discipline: "Monitoring / Fixes / Iteration",
-    status: "Booked",
-    availability: "By schedule",
-    specialties: ["Bugfixes", "SEO", "Upgrades"],
+    name: "Landing Pages & MVPs",
+    discipline:
+      "Conversion-focused pages and minimum viable products.",
+    status: "Available",
+    availability: "3–7 days",
+    specialties: ["Validating ideas", "Launching campaigns"],
   },
 ];
 
@@ -92,6 +94,10 @@ export function Roster() {
             <h2 className="font-oswald text-4xl md:text-6xl font-bold uppercase tracking-[-0.03em]">
               SERVICES
             </h2>
+            <p className="font-inter text-sm text-[#1a1a1a]/70 mt-3 max-w-2xl">
+              These are common service lines, not strict limits. If your IT/software
+              requirement is different, share it and we can scope it together.
+            </p>
           </div>
           <span className="hidden md:block font-oswald text-sm uppercase tracking-widest">
             6 AREAS
@@ -107,16 +113,16 @@ export function Roster() {
               Service
             </div>
             <div className="col-span-3 px-4 py-3 font-oswald text-xs font-bold uppercase tracking-widest border-l-[3px] border-white/20">
-              Stack / Focus
+              What it is
             </div>
             <div className="col-span-2 px-4 py-3 font-oswald text-xs font-bold uppercase tracking-widest border-l-[3px] border-white/20">
               Status
             </div>
             <div className="col-span-2 px-4 py-3 font-oswald text-xs font-bold uppercase tracking-widest border-l-[3px] border-white/20">
-              Start
+              Turnaround
             </div>
             <div className="col-span-2 px-4 py-3 font-oswald text-xs font-bold uppercase tracking-widest border-l-[3px] border-white/20">
-              Common Work
+              Best for
             </div>
           </div>
 
@@ -161,7 +167,7 @@ export function Roster() {
                 {service.specialties.map((s, j) => (
                   <span
                     key={j}
-                    className="font-inter text-[10px] uppercase tracking-wider border border-black px-2 py-0.5 bg-white"
+                    className="font-inter text-[10px] uppercase tracking-wider border border-black px-2 py-0.5 bg-white inline-block mr-1 mb-1"
                   >
                     {s}
                   </span>

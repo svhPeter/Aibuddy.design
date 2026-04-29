@@ -2,9 +2,19 @@ import { Navigation } from "@/components/Navigation";
 import { Hero } from "@/sections/Hero";
 import { Portfolio } from "@/sections/Portfolio";
 import { Process } from "@/sections/Process";
+import { Pricing } from "@/sections/Pricing";
 import { Roster } from "@/sections/Roster";
 import { InquiryForm } from "@/sections/InquiryForm";
 import { siteConfig } from "@/config/site";
+
+const footerNavItems: { label: string; href: string }[] = [
+  { label: "Work", href: "#portfolio" },
+  { label: "Process", href: "#process" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Services", href: "#services" },
+  { label: "Inquiry", href: "#inquiry" },
+  { label: "Tools", href: "/tools" },
+];
 
 export default function Home() {
   return (
@@ -13,6 +23,7 @@ export default function Home() {
       <Hero />
       <Portfolio />
       <Process />
+      <Pricing />
       <Roster />
       <InquiryForm />
 
@@ -32,17 +43,15 @@ export default function Home() {
               Navigate
             </h4>
             <div className="space-y-2">
-              {["Work", "Process", "Services", "Inquiry", "Tools"].map(
-                (item) => (
-                  <a
-                    key={item}
-                    href={item === "Tools" ? "/tools" : `#${item.toLowerCase()}`}
-                    className="block font-inter text-sm text-white/70 hover:text-[#F9FF00] transition-colors"
-                  >
-                    {item}
-                  </a>
-                )
-              )}
+              {footerNavItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="block font-inter text-sm text-white/70 hover:text-[#F9FF00] transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
           </div>
           <div className="md:col-span-3 border-r-[3px] border-white/10 px-6 md:px-10 py-10">
@@ -51,11 +60,12 @@ export default function Home() {
             </h4>
             <div className="space-y-2">
               {[
-                "Editorial Illustration",
-                "Brand Identity",
-                "Publishing",
-                "Packaging Design",
-                "Motion Graphics",
+                "Full-stack web apps",
+                "Mobile apps (Flutter)",
+                "SaaS products",
+                "AI integration",
+                "3D & interactive web",
+                "Landing pages & MVPs",
               ].map((item) => (
                 <span
                   key={item}

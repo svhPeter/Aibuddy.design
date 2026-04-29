@@ -2,12 +2,12 @@ export const siteConfig = {
   name: "AIBuddy",
   domain: "aibuddy.design",
   description:
-    "AIBuddy is an independent AI studio — strategy, design, and implementation. Direct execution, honest scoping, production-minded delivery.",
+    "Web, mobile, SaaS, AI, 3D — production-grade code, fast turnaround, no-surprise pricing. Building from Karachi for clients worldwide.",
   links: {
     email: "sami.vh@yahoo.com",
     url: "https://aibuddy.design",
   },
-  locationLabel: "Founder-led. Based in the US. Working globally.",
+  locationLabel: "Building from Karachi for clients worldwide. UTC+5.",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

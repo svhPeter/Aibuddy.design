@@ -23,11 +23,11 @@ export function Hero() {
         <div className="max-w-xl">
           <div className="mb-6">
             <span className="inline-block bg-[#F9FF00] px-3 py-1 font-oswald text-xs font-bold uppercase tracking-widest border-[3px] border-black">
-              Independent AI Studio
+              Engineering Studio
             </span>
           </div>
           <h1 className="font-oswald text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold uppercase leading-[0.95] tracking-[-0.03em] mb-8 text-[#1a1a1a]">
-            STRATEGY, DESIGN, AND IMPLEMENTATION FOR SHIPPED AI PRODUCTS
+            Engineering studio that ships real products.
           </h1>
           <p className="font-inter text-sm md:text-base leading-relaxed mb-8 text-[#1a1a1a]/80 max-w-md">
             {siteConfig.description}
@@ -37,7 +37,7 @@ export function Hero() {
               onClick={scrollToInquiry}
               className="btn-brutal btn-brutal-yellow flex items-center gap-2 group"
             >
-              START A PROJECT
+              Start a project&nbsp;→
               <ArrowRight
                 size={18}
                 className="transition-transform group-hover:translate-x-1"
@@ -50,23 +50,35 @@ export function Hero() {
               }}
               className="btn-brutal btn-brutal-black flex items-center gap-2"
             >
-              VIEW WORK
+              See live work
             </button>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-0 mt-12 border-[3px] border-black">
             <div className="border-r-[3px] border-black px-4 py-4 text-center">
-              <div className="font-oswald text-2xl md:text-3xl font-bold">150+</div>
-              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">Projects</div>
+              <div className="font-oswald text-2xl md:text-3xl font-bold">
+                5+
+              </div>
+              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">
+                live products
+              </div>
             </div>
             <div className="border-r-[3px] border-black px-4 py-4 text-center">
-              <div className="font-oswald text-2xl md:text-3xl font-bold">48h</div>
-              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">First Reply</div>
+              <div className="font-oswald text-2xl md:text-3xl font-bold">
+                Now
+              </div>
+              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">
+                Available
+              </div>
             </div>
             <div className="px-4 py-4 text-center">
-              <div className="font-oswald text-2xl md:text-3xl font-bold">12</div>
-              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">Tools</div>
+              <div className="font-oswald text-xl md:text-2xl font-bold leading-none">
+                Karachi
+              </div>
+              <div className="font-inter text-[10px] uppercase tracking-widest mt-1">
+                UTC+5
+              </div>
             </div>
           </div>
         </div>

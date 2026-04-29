@@ -27,6 +27,7 @@ export function Navigation() {
   const navItems = [
     { label: "WORK", action: () => scrollToSection("portfolio") },
     { label: "PROCESS", action: () => scrollToSection("process") },
+    { label: "PRICING", action: () => scrollToSection("pricing") },
     { label: "SERVICES", action: () => scrollToSection("services") },
     { label: "INQUIRY", action: () => scrollToSection("inquiry") },
   ];
