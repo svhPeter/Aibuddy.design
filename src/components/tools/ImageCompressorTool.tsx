@@ -1,5 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import { fileToImage, imageToCanvas, downloadBlob } from "@/lib/image-tool-helpers";
+import {
+  fileToImage,
+  imageToCanvas,
+  downloadBlob,
+} from "@/lib/image-tool-helpers";
+import { useObjectUrl } from "@/hooks/use-object-url";
+import { ToolResultPanel } from "@/components/tools/ToolResultPanel";
 import { Loader2, Download } from "lucide-react";
 
 type OutFmt = "image/jpeg" | "image/webp";
@@ -11,10 +17,18 @@ export function ImageCompressorTool() {
   const [format, setFormat] = useState<OutFmt>("image/jpeg");
   const [inBytes, setInBytes] = useState(0);
   const [outBytes, setOutBytes] = useState(0);
+  const [outputBlob, setOutputBlob] = useState<Blob | null>(null);
   const [name, setName] = useState("export");
 
+  const previewUrl = useObjectUrl(outputBlob);
+
   useEffect(() => {
-    if (!file) return;
+    if (!file) {
+      setOutputBlob(null);
+      setInBytes(0);
+      setOutBytes(0);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setBusy(true);
@@ -25,7 +39,9 @@ export function ImageCompressorTool() {
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob((b) => resolve(b), format, quality)
         );
-        if (!cancelled) setOutBytes(blob ? blob.size : 0);
+        if (cancelled) return;
+        setOutputBlob(blob);
+        setOutBytes(blob ? blob.size : 0);
       } finally {
         if (!cancelled) setBusy(false);
       }
@@ -40,6 +56,7 @@ export function ImageCompressorTool() {
       setFile(null);
       setInBytes(0);
       setOutBytes(0);
+      setOutputBlob(null);
       return;
     }
     setFile(f);
@@ -47,27 +64,16 @@ export function ImageCompressorTool() {
   };
 
   const download = useCallback(async () => {
-    if (!file) return;
-    setBusy(true);
-    try {
-      const img = await fileToImage(file);
-      const canvas = imageToCanvas(img);
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((b) => resolve(b), format, quality)
-      );
-      if (!blob) return;
-      const ext = format === "image/webp" ? "webp" : "jpg";
-      downloadBlob(blob, `${name || "image"}-smaller.${ext}`);
-    } finally {
-      setBusy(false);
-    }
-  }, [file, format, quality, name]);
+    if (!outputBlob) return;
+    const ext = format === "image/webp" ? "webp" : "jpg";
+    downloadBlob(outputBlob, `${name || "image"}-smaller.${ext}`);
+  }, [outputBlob, format, name]);
 
   return (
     <div className="space-y-4">
       <p className="font-inter text-sm text-[#1a1a1a]/70">
-        Images stay in this tab. Pick JPEG, PNG, or WebP, then download a smaller
-        file.
+        Images stay in this tab. Pick JPEG, PNG, or WebP, adjust quality, preview,
+        then download.
       </p>
       <input
         type="file"
@@ -104,26 +110,52 @@ export function ImageCompressorTool() {
           />
         </div>
       </div>
-      <div className="border-[3px] border-black p-3 font-inter text-xs">
-        {inBytes ? (
-          <p>
-            <strong>Original:</strong> {(inBytes / 1024).toFixed(1)} KB —{" "}
-            <strong>Output est.:</strong>{" "}
-            {busy ? "…" : outBytes ? (outBytes / 1024).toFixed(1) + " KB" : "—"}
-          </p>
-        ) : (
-          <p>Choose an image to preview output size.</p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={download}
-        disabled={!file || busy}
-        className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow"
-      >
-        {busy ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-        download
-      </button>
+
+      <ToolResultPanel
+        show={!!file}
+        title="Compressed preview"
+        preview={
+          <div className="relative">
+            {busy ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+                <Loader2 className="animate-spin" size={24} />
+              </div>
+            ) : null}
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt=""
+                className="max-h-[420px] w-auto max-w-full border-[3px] border-black object-contain"
+              />
+            ) : (
+              <span className="font-inter text-xs text-[#1a1a1a]/50 py-8">
+                Waiting for preview…
+              </span>
+            )}
+          </div>
+        }
+        auxiliary={
+          inBytes ? (
+            <p>
+              <strong>Original:</strong> {(inBytes / 1024).toFixed(1)} KB —{" "}
+              <strong>Output:</strong>{" "}
+              {busy ? "…" : outBytes ? (outBytes / 1024).toFixed(1) + " KB" : "—"}
+            </p>
+          ) : null
+        }
+        actions={
+          <button
+            type="button"
+            onClick={download}
+            disabled={!outputBlob || busy}
+            className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow disabled:opacity-40"
+          >
+            {busy ? <Loader2 className="animate-spin" size={16} /> : null}
+            <Download size={16} />
+            Download
+          </button>
+        }
+      />
     </div>
   );
 }

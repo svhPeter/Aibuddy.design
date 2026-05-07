@@ -1,14 +1,53 @@
-import { useState, useCallback } from "react";
-import { fileToImage, imageToCanvas, downloadDataUrl } from "@/lib/image-tool-helpers";
-import { Download } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import {
+  fileToImage,
+  imageToCanvas,
+  downloadDataUrl,
+} from "@/lib/image-tool-helpers";
+import { ToolResultPanel } from "@/components/tools/ToolResultPanel";
+import { Loader2, Download } from "lucide-react";
 
-const POS: Record<string, (cw: number, ch: number, m: number) => [number, number]> = {
+const POS: Record<
+  string,
+  (cw: number, ch: number, m: number) => [number, number]
+> = {
   tl: (_w, _h, m) => [m, m + 18],
   tr: (w, _h, m) => [w - m - 10, m + 18],
   c: (w, h, _m) => [w / 2, h / 2],
   bl: (_w, h, m) => [m, h - m - 6],
   br: (w, h, m) => [w - m - 10, h - m - 6],
 };
+
+function applyWatermarkToCanvas(
+  file: File,
+  text: string,
+  pos: keyof typeof POS,
+  opacity: number,
+  size: number
+): Promise<HTMLCanvasElement> {
+  return (async () => {
+    const img = await fileToImage(file);
+    const c = imageToCanvas(img);
+    const ctx = c.getContext("2d");
+    if (!ctx) return c;
+    const m = 20;
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = "#111";
+    ctx.font = `bold ${size}px Inter, system-ui, sans-serif`;
+    ctx.textBaseline = "middle";
+    if (pos === "c") {
+      ctx.textAlign = "center";
+      ctx.fillText(text, POS.c(c.width, c.height, 0)[0], POS.c(c.width, c.height, 0)[1]);
+    } else {
+      ctx.textAlign = "left";
+      const [x, y] = POS[pos](c.width, c.height, m);
+      ctx.fillText(text, x, y);
+    }
+    ctx.restore();
+    return c;
+  })();
+}
 
 export function WatermarkTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,45 +56,40 @@ export function WatermarkTool() {
   const [opacity, setOpacity] = useState(0.5);
   const [size, setSize] = useState(20);
   const [name, setName] = useState("watermarked");
+  const [busy, setBusy] = useState(false);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
-  const run = useCallback(() => {
-    if (!file) return;
-    void (async () => {
-      const img = await fileToImage(file);
-      const c = imageToCanvas(img);
-      const ctx = c.getContext("2d");
-      if (!ctx) return;
-      const m = 20;
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      ctx.fillStyle = "#111";
-      ctx.font = `bold ${size}px Inter, system-ui, sans-serif`;
-      ctx.textBaseline = "middle";
-      if (pos === "c") {
-        ctx.textAlign = "center";
-        ctx.fillText(
-          text,
-          POS.c(c.width, c.height, 0)[0],
-          POS.c(c.width, c.height, 0)[1]
-        );
-      } else {
-        ctx.textAlign = "left";
-        const [x, y] = POS[pos](c.width, c.height, m);
-        ctx.fillText(text, x, y);
+  useEffect(() => {
+    if (!file) {
+      setPreviewDataUrl(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBusy(true);
+      try {
+        const c = await applyWatermarkToCanvas(file, text, pos, opacity, size);
+        const url = c.toDataURL("image/png");
+        if (!cancelled) setPreviewDataUrl(url);
+      } finally {
+        if (!cancelled) setBusy(false);
       }
-      ctx.restore();
-      downloadDataUrl(
-        c.toDataURL("image/png"),
-        `${name || "watermark"}.png`
-      );
     })();
+    return () => {
+      cancelled = true;
+    };
+  }, [file, text, pos, opacity, size]);
+
+  const download = useCallback(async () => {
+    if (!file) return;
+    const c = await applyWatermarkToCanvas(file, text, pos, opacity, size);
+    downloadDataUrl(c.toDataURL("image/png"), `${name || "watermark"}.png`);
   }, [file, text, pos, opacity, size, name]);
 
   return (
     <div className="space-y-4">
       <p className="font-inter text-sm text-[#1a1a1a]/70">
-        Add text on top. Use your own mark; for logos as image, we can add that in
-        a later pass.
+        Add text on top — preview matches the PNG you download.
       </p>
       <input
         type="file"
@@ -116,14 +150,42 @@ export function WatermarkTool() {
               />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={run}
-            className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow"
-          >
-            <Download size={16} />
-            download png
-          </button>
+
+          <ToolResultPanel
+            show
+            title="Watermark preview"
+            preview={
+              <div className="relative">
+                {busy ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+                    <Loader2 className="animate-spin" size={24} />
+                  </div>
+                ) : null}
+                {previewDataUrl ? (
+                  <img
+                    src={previewDataUrl}
+                    alt=""
+                    className="max-h-[420px] w-auto max-w-full border-[3px] border-black object-contain"
+                  />
+                ) : (
+                  <span className="font-inter text-xs text-[#1a1a1a]/50 py-8">
+                    Building preview…
+                  </span>
+                )}
+              </div>
+            }
+            actions={
+              <button
+                type="button"
+                onClick={() => void download()}
+                disabled={!previewDataUrl || busy}
+                className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow disabled:opacity-40"
+              >
+                <Download size={16} />
+                Download PNG
+              </button>
+            }
+          />
         </>
       )}
     </div>

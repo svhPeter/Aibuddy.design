@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
+import {
+  PortfolioPlaceholderArt,
+  placeholderVariantForProjectId,
+} from "@/components/portfolio/PortfolioPlaceholderArt";
 
-/* TODO: Add /public/work/shoppos.png (and verify cosmicweb, doctor-booking assets). */
 const projects = [
   {
     id: 1,
@@ -68,6 +71,9 @@ const projects = [
 
 export function Portfolio() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [imageFailedById, setImageFailedById] = useState<Record<number, boolean>>(
+    {}
+  );
 
   return (
     <section id="portfolio" className="py-16 md:py-24 border-b-[3px] border-black">
@@ -96,16 +102,29 @@ export function Portfolio() {
               onMouseEnter={() => setHoveredId(project.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
-              <div className="relative overflow-hidden aspect-[3/4]">
-                <img
-                  src={project.image}
-                  alt={project.name}
-                  className={`w-full h-full object-cover transition-all duration-500 ${
-                    hoveredId === project.id
-                      ? "scale-105 saturate-0"
-                      : "scale-100 saturate-100"
-                  }`}
-                />
+              <div className="relative overflow-hidden aspect-[3/4] bg-[#1a1a1a]">
+                <div className="absolute inset-0 z-0">
+                  <PortfolioPlaceholderArt
+                    variant={placeholderVariantForProjectId(project.id)}
+                  />
+                </div>
+                {!imageFailedById[project.id] ? (
+                  <img
+                    src={project.image}
+                    alt={project.name}
+                    className={`absolute inset-0 z-[1] h-full w-full object-cover transition-all duration-500 ${
+                      hoveredId === project.id
+                        ? "scale-105 saturate-0"
+                        : "scale-100 saturate-100"
+                    }`}
+                    onError={() =>
+                      setImageFailedById((prev) => ({
+                        ...prev,
+                        [project.id]: true,
+                      }))
+                    }
+                  />
+                ) : null}
                 {/* Overlay */}
                 <div
                   className={`absolute inset-0 transition-all duration-300 ${

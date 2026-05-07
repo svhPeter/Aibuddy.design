@@ -1,6 +1,12 @@
-import { useState, useCallback } from "react";
-import { fileToImage, imageToCanvas, downloadBlob } from "@/lib/image-tool-helpers";
-import { Download } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import {
+  fileToImage,
+  imageToCanvas,
+  downloadBlob,
+} from "@/lib/image-tool-helpers";
+import { useObjectUrl } from "@/hooks/use-object-url";
+import { ToolResultPanel } from "@/components/tools/ToolResultPanel";
+import { Loader2, Download } from "lucide-react";
 
 type Fmt = "image/png" | "image/jpeg" | "image/webp";
 
@@ -15,29 +21,49 @@ export function ImageConverterTool() {
   const [format, setFormat] = useState<Fmt>("image/png");
   const [quality, setQuality] = useState(0.9);
   const [name, setName] = useState("out");
+  const [busy, setBusy] = useState(false);
+  const [blob, setBlob] = useState<Blob | null>(null);
 
-  const go = useCallback(() => {
-    if (!file) return;
-    void (async () => {
-      const img = await fileToImage(file);
-      const canvas = imageToCanvas(img);
-      const q = format === "image/png" ? undefined : quality;
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(
-          (b) => resolve(b),
-          format,
-          format === "image/png" ? undefined : q
-        )
-      );
-      if (!blob) return;
-      downloadBlob(blob, `${name}.${ext[format]}`);
+  const previewUrl = useObjectUrl(blob);
+
+  useEffect(() => {
+    if (!file) {
+      setBlob(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBusy(true);
+      try {
+        const img = await fileToImage(file);
+        const canvas = imageToCanvas(img);
+        const q = format === "image/png" ? undefined : quality;
+        const next = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(
+            (b) => resolve(b),
+            format,
+            format === "image/png" ? undefined : q
+          )
+        );
+        if (!cancelled) setBlob(next);
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
     })();
-  }, [file, format, quality, name]);
+    return () => {
+      cancelled = true;
+    };
+  }, [file, format, quality]);
+
+  const download = useCallback(() => {
+    if (!blob) return;
+    downloadBlob(blob, `${name || "out"}.${ext[format]}`);
+  }, [blob, format, name]);
 
   return (
     <div className="space-y-4">
       <p className="font-inter text-sm text-[#1a1a1a]/70">
-        Re-encode a single image. Transparent PNGs stay on PNG; JPEG/WebP drop alpha.
+        Re-encode a single image. Preview matches the downloaded file.
       </p>
       <input
         type="file"
@@ -81,14 +107,47 @@ export function ImageConverterTool() {
               />
             </div>
           )}
-          <button
-            type="button"
-            onClick={go}
-            className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow"
-          >
-            <Download size={16} />
-            download
-          </button>
+
+          <ToolResultPanel
+            show
+            title="Converted preview"
+            preview={
+              <div className="relative">
+                {busy ? (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+                    <Loader2 className="animate-spin" size={24} />
+                  </div>
+                ) : null}
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt=""
+                    className="max-h-[420px] w-auto max-w-full border-[3px] border-black object-contain"
+                  />
+                ) : (
+                  <span className="font-inter text-xs text-[#1a1a1a]/50 py-8">
+                    Building preview…
+                  </span>
+                )}
+              </div>
+            }
+            auxiliary={
+              blob ? (
+                <span>Output ~{(blob.size / 1024).toFixed(1)} KB</span>
+              ) : null
+            }
+            actions={
+              <button
+                type="button"
+                onClick={download}
+                disabled={!blob || busy}
+                className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow disabled:opacity-40"
+              >
+                <Download size={16} />
+                Download
+              </button>
+            }
+          />
         </>
       )}
     </div>
