@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.aibuddy.design/</loc>
+    <loc>https://aibuddy.design/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.aibuddy.design/about</loc>
+    <loc>https://aibuddy.design/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.aibuddy.design/tools</loc>
+    <loc>https://aibuddy.design/tools</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.aibuddy.design/contact</loc>
+    <loc>https://aibuddy.design/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

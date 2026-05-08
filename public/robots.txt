@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.aibuddy.design/sitemap.xml
+Sitemap: https://aibuddy.design/sitemap.xml
