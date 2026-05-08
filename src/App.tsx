@@ -5,6 +5,7 @@ import Tools from "./pages/Tools";
 import ToolDetail from "./pages/ToolDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
 import { ChatWidget } from "./components/ChatWidget";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/tools/:toolId" element={<ToolDetail />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <ChatWidget />

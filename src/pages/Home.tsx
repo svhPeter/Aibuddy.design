@@ -96,7 +96,10 @@ export default function Home() {
         </div>
         <div className="border-t border-white/10 px-6 md:px-10 py-4 flex flex-col md:flex-row items-center justify-between gap-2">
           <span className="font-inter text-[10px] text-white/40">
-            &copy; 2026 {siteConfig.name}. ALL RIGHTS RESERVED.
+            &copy; 2026 {siteConfig.name}. ALL RIGHTS RESERVED.{" "}
+            <a href="/privacy" className="underline hover:text-[#F9FF00]">
+              Privacy
+            </a>
           </span>
           <span className="font-inter text-[10px] text-white/40">
             {siteConfig.domain.toUpperCase()}
