@@ -41,9 +41,8 @@ export default function Contact() {
             Let&apos;s talk
           </h1>
           <p className="font-inter text-sm md:text-base text-[#1a1a1a]/70 max-w-2xl mt-4 leading-relaxed">
-            Tell us about your product, timeline, and constraints. We answer in
-            plain English, scope first — no hard sell. Working hours are US-based;
-            we still reply to every serious note.
+            Tell us what you&apos;re building and what “done” looks like. We&apos;ll
+            reply with fit, timeline, and a clear next step — no sales script.
           </p>
         </div>
       </div>
@@ -55,21 +54,21 @@ export default function Contact() {
           </h2>
           <ul className="font-inter text-sm text-[#1a1a1a]/80 space-y-3 leading-relaxed">
             <li className="border-l-[3px] border-[#F9FF00] pl-3">
-              You share goals, budget band (even rough), and any links (Figma, repo,
-              deck).
+              You share goals, timeline, budget range (even rough), and any links
+              (Figma, repo, docs).
             </li>
             <li className="border-l-[3px] border-black pl-3">
-              We reply with fit, clarifying questions, and a no-BS read on
-              whether we are the right studio.
+              We reply with fit, clarifying questions, and a straight answer on
+              what we can ship.
             </li>
             <li className="border-l-[3px] border-[#FF0004] pl-3">
-              If it is a match, we propose a short next step: call, written
-              estimate, or a small paid discovery when scope needs it.
+              If it&apos;s a match, we propose the next step: a quick call, a scoped
+              proposal, or a small discovery sprint.
             </li>
           </ul>
           <p className="font-inter text-xs text-[#1a1a1a]/55 mt-8 leading-relaxed">
-            {siteConfig.locationLabel} Free tools stay in your browser; project work
-            is agreed in writing like adults.
+            {siteConfig.locationLabel} For tools, your files stay in your browser.
+            For projects, scope and deliverables are agreed in writing.
           </p>
         </div>
 

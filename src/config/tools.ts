@@ -12,7 +12,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/image-compressor",
     name: "Image Compressor",
     description:
-      "Shrink JPG, PNG, or WebP in your browser — quality slider, before/after size, instant download.",
+      "Shrink an image in your browser. Preview the result, then download.",
     badge: "Free",
   },
   {
@@ -20,7 +20,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/image-enlarger",
     name: "Image Enlarger",
     description:
-      "Increase image dimensions with clean in-browser processing — fast and private.",
+      "Scale an image up in your browser. Preview, then download a PNG.",
     badge: "Free",
   },
   {
@@ -28,7 +28,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/image-converter",
     name: "Image Converter",
     description:
-      "Convert JPG, PNG, or WebP in your browser — pick format, optional quality, instant download.",
+      "Convert JPG/PNG/WebP in your browser. Preview output before download.",
     badge: "Free",
   },
   {
@@ -36,7 +36,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/social-resize",
     name: "Social Media Resize",
     description:
-      "Resize images for social presets — fit modes, clean exports, instant download.",
+      "Resize for common social sizes (cover or contain). Preview, then download.",
     badge: "Free",
   },
   {
@@ -44,7 +44,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/watermark-tool",
     name: "Watermark Tool",
     description:
-      "Add text or logo watermarks with opacity and placement controls — preview and export.",
+      "Add a text watermark with position and opacity. Preview, then export PNG.",
     badge: "Free",
   },
   {
@@ -52,7 +52,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/jpg-pdf-tool",
     name: "Images → PDF",
     description:
-      "Merge multiple images into one A4 PDF (one image per page) — in your browser, no upload.",
+      "Merge images into an A4 PDF with a preview (optional cover + footer).",
     badge: "Free",
   },
   {
@@ -60,7 +60,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/ai-caption-generator",
     name: "AI Caption Generator",
     description:
-      "Generate caption options, CTA, and hashtags for Instagram, TikTok, LinkedIn, or X.",
+      "Generate caption options for Instagram, TikTok, LinkedIn, or X.",
     badge: "AI",
   },
   {
@@ -68,7 +68,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/product-description-generator",
     name: "Product Description Generator",
     description:
-      "Generate short + long product copy, feature bullets, and a CTA from a few inputs.",
+      "Generate product copy: short, long, bullets, and CTA from a few inputs.",
     badge: "AI",
   },
   {
@@ -76,7 +76,7 @@ export const toolsCatalog: readonly ToolEntry[] = [
     href: "/tools/prompt-enhancer",
     name: "Prompt Enhancer",
     description:
-      "Turn rough prompts into polished, model-ready text with negatives and tags.",
+      "Turn a rough idea into a cleaner prompt, negatives, and tags.",
     badge: "AI",
   },
   {

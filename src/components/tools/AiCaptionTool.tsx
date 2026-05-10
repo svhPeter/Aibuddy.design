@@ -49,6 +49,10 @@ export function AiCaptionTool() {
 
   return (
     <div className="space-y-6">
+      <p className="font-inter text-sm text-[#1a1a1a]/70">
+        Quick captions for different tones. Choose a style, tweak the topic, then
+        copy the full set.
+      </p>
       <div>
         <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
           Topic

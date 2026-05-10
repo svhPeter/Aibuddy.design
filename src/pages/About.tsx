@@ -28,10 +28,9 @@ export default function About() {
             How we work
           </h2>
           <p className="font-inter text-sm text-[#1a1a1a]/80 leading-relaxed">
-            Small-team energy: we talk to you directly, document scope in plain
-            language, and ship. No layers of account managers — strategy, design,
-            and implementation stay connected so the product you launch matches
-            what you agreed to build.
+            You work with the builder. We scope in plain language, ship in small
+            milestones, and keep progress visible. No account managers, no mystery
+            timelines.
           </p>
         </div>
         <div className="lg:col-span-6 px-6 md:px-10 lg:px-12 py-10 bg-[#fafafa]">
@@ -39,9 +38,9 @@ export default function About() {
             Good fit
           </h2>
           <ul className="font-inter text-sm text-[#1a1a1a]/80 space-y-2 leading-relaxed list-disc pl-4">
-            <li>Web products, internal tools, and AI-assisted workflows</li>
-            <li>Brutally honest scoping and timelines you can plan around</li>
-            <li>Teams that value craft and shipping over slide decks</li>
+            <li>Founders launching MVPs and SaaS</li>
+            <li>Teams shipping web/mobile features fast</li>
+            <li>Products that need AI or 3D without hype</li>
           </ul>
         </div>
       </div>

@@ -95,8 +95,8 @@ export function Roster() {
               SERVICES
             </h2>
             <p className="font-inter text-sm text-[#1a1a1a]/70 mt-3 max-w-2xl">
-              These are common service lines, not strict limits. If your IT/software
-              requirement is different, share it and we can scope it together.
+              These are the most common requests. If you need something else in IT /
+              software, share it — we can scope it together.
             </p>
           </div>
           <span className="hidden md:block font-oswald text-sm uppercase tracking-widest">

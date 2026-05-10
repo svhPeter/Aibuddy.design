@@ -35,6 +35,10 @@ export function ProductDescriptionTool() {
 
   return (
     <div className="space-y-6">
+      <p className="font-inter text-sm text-[#1a1a1a]/70">
+        Draft product copy you can paste into a landing page or deck. Edit the
+        inputs, then copy each block.
+      </p>
       <div>
         <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
           Product / offer name

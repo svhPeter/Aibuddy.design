@@ -276,9 +276,8 @@ export function InquiryForm() {
             Instructions
           </h3>
           <p className="font-inter text-xs leading-relaxed text-[#1a1a1a]/70 mb-6">
-            Answer each required field below. Submit opens your drafted brief —
-            choose WhatsApp, email, or copy. You can also copy the brief at any
-            time once everything required is filled in.
+            Fill the required fields. On submit, we generate a clean brief you can
+            send by email or WhatsApp (or just copy/paste).
           </p>
 
           <div className="border-[3px] border-black p-4 bg-white">
@@ -297,8 +296,8 @@ export function InquiryForm() {
             <p className="font-inter text-sm">
               <strong className="font-oswald uppercase">Note:</strong> No
               account needed — after submit use WhatsApp, email, or copy the
-              brief. Even if your project is outside the listed categories, you
-              can still share it here.
+              brief. If your project doesn&apos;t match the categories, pick the
+              closest one and explain it — we&apos;ll scope it with you.
             </p>
           </div>
 

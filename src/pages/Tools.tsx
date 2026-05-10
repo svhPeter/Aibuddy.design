@@ -16,7 +16,7 @@ export default function Tools() {
           TOOLS
         </h1>
         <p className="font-inter text-sm md:text-base text-[#1a1a1a]/70 max-w-2xl mt-4 leading-relaxed">
-          All free in the browser — no login. Pick a utility and ship output in minutes.
+          Free utilities you can run in your browser. Preview the output, then download.
         </p>
       </div>
 

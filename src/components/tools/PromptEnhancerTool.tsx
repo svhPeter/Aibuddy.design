@@ -43,8 +43,8 @@ export function PromptEnhancerTool() {
           onChange={(e) => setRough(e.target.value)}
         />
         <p className="font-inter text-[11px] text-[#1a1a1a]/50 mt-1">
-          Runs 100% in the browser. Refine below and copy per block into your
-          model (SD, Midjourney, etc.).
+          Runs in your browser. Copy any block below into your model (SD, Midjourney,
+          etc.).
         </p>
       </div>
 
