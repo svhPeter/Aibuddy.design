@@ -12,10 +12,14 @@ import { ImageConverterTool } from "@/components/tools/ImageConverterTool";
 import { SocialResizeTool } from "@/components/tools/SocialResizeTool";
 import { WatermarkTool } from "@/components/tools/WatermarkTool";
 import { JpgPdfTool } from "@/components/tools/JpgPdfTool";
+import { VideoCompressorTool } from "@/components/tools/VideoCompressorTool";
+import { PdfEditorTool } from "@/components/tools/PdfEditorTool";
 import { usePageMeta } from "@/hooks/use-page-meta";
 import type { ReactNode } from "react";
 
 const TOOL_PANELS: Record<string, ReactNode> = {
+  "video-compressor": <VideoCompressorTool />,
+  "pdf-editor": <PdfEditorTool />,
   "currency-converter": <CurrencyConverter />,
   "prompt-enhancer": <PromptEnhancerTool />,
   "ai-caption-generator": <AiCaptionTool />,

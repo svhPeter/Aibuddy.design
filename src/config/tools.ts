@@ -8,6 +8,22 @@ export type ToolEntry = {
 
 export const toolsCatalog: readonly ToolEntry[] = [
   {
+    id: "video-compressor",
+    href: "/tools/video-compressor",
+    name: "Video Compressor",
+    description:
+      "Compress MP4 and WebM videos in your browser using FFmpeg. No uploads, no server — files stay private.",
+    badge: "Free · New",
+  },
+  {
+    id: "pdf-editor",
+    href: "/tools/pdf-editor",
+    name: "PDF Editor & Signer",
+    description:
+      "Edit, annotate, sign, and export PDFs directly in your browser. No uploads required.",
+    badge: "Free · New",
+  },
+  {
     id: "image-compressor",
     href: "/tools/image-compressor",
     name: "Image Compressor",
