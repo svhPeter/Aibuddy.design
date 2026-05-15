@@ -2,8 +2,15 @@ import { Link } from "react-router";
 import { ArrowUpRight, ArrowLeft } from "lucide-react";
 import { toolsCatalog } from "@/config/tools";
 import { Navigation } from "@/components/Navigation";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export default function Tools() {
+  usePageMeta({
+    title: "Free Online Tools — AIBuddy",
+    description: "Free browser-based image, PDF, and AI tools. Compress, resize, convert, watermark images. Generate captions, product descriptions, and more — no signup needed.",
+    canonical: "https://aibuddy.design/tools",
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -26,20 +33,20 @@ export default function Tools() {
             <Link
               key={tool.id}
               to={tool.href}
-              className="border-[3px] border-black p-8 m-[-1.5px] hover:bg-[#F9FF00] transition-colors group"
+              className="border-[3px] border-black p-8 m-[-1.5px] hover:bg-[#F9FF00] active:bg-[#1a1a1a] active:text-white transition-colors group"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="font-oswald text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/70">
+                  <div className="font-oswald text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a1a]/70 group-hover:text-[#1a1a1a] group-active:text-white/70">
                     {tool.badge}
                   </div>
-                  <div className="font-oswald text-2xl font-bold uppercase tracking-tight mt-3">
+                  <div className="font-oswald text-2xl font-bold uppercase tracking-tight mt-3 group-hover:text-[#1a1a1a] group-active:text-white">
                     {tool.name}
                   </div>
                 </div>
-                <ArrowUpRight className="mt-1 opacity-60 group-hover:opacity-100" />
+                <ArrowUpRight className="mt-1 opacity-60 group-hover:opacity-100 group-hover:text-[#1a1a1a] group-active:text-white" />
               </div>
-              <p className="font-inter text-sm text-[#1a1a1a]/70 mt-4 leading-relaxed max-w-md">
+              <p className="font-inter text-sm text-[#1a1a1a]/70 mt-4 leading-relaxed max-w-md group-hover:text-[#1a1a1a]/90 group-active:text-white/70">
                 {tool.description}
               </p>
             </Link>

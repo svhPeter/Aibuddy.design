@@ -211,7 +211,7 @@ export function CurrencyConverter() {
         <button
           type="button"
           onClick={swap}
-          className="btn-brutal border-[3px] border-black bg-white px-4 flex items-center justify-center gap-2 h-[48px] shrink-0"
+          className="btn-brutal btn-brutal-ghost px-4 flex items-center justify-center gap-2 h-[48px] shrink-0"
           title="Swap currencies"
         >
           <ArrowLeftRight size={18} />

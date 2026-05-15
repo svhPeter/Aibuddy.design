@@ -1,7 +1,7 @@
 const tiers = [
   {
     title: "Landing Page",
-    startingAt: "STARTING_PRICE_LANDING",
+    startingAt: "From $499",
     turnaround: "3–7 days",
     ideal_for: "Marketing campaigns, product launches",
     popular: false,
@@ -15,7 +15,7 @@ const tiers = [
   },
   {
     title: "MVP / Web App",
-    startingAt: "STARTING_PRICE_MVP",
+    startingAt: "From $1,499",
     turnaround: "2–4 weeks",
     ideal_for: "Founders validating an idea, agencies",
     popular: true,

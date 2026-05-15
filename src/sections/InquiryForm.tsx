@@ -229,7 +229,7 @@ export function InquiryForm() {
               <button
                 type="button"
                 onClick={() => void handleCopyBrief()}
-                className="btn-brutal flex items-center justify-center gap-2 border-[3px] border-black bg-white"
+                className="btn-brutal btn-brutal-ghost flex items-center justify-center gap-2"
               >
                 <Copy size={18} />
                 Copy brief
@@ -248,7 +248,7 @@ export function InquiryForm() {
                   setForm(initialForm);
                   setTransportError("");
                 }}
-                className="font-oswald text-xs font-bold uppercase tracking-widest underline"
+                className="font-oswald text-xs font-bold uppercase tracking-widest underline hover:text-[#FF0004] active:text-[#1a1a1a] transition-colors"
               >
                 New inquiry
               </button>
@@ -445,7 +445,7 @@ export function InquiryForm() {
               type="button"
               onClick={() => void handleCopyBrief()}
               disabled={!isValid}
-              className={`btn-brutal flex items-center gap-2 bg-white border-[3px] border-black ${
+              className={`btn-brutal btn-brutal-ghost flex items-center gap-2 ${
                 !isValid ? "opacity-30 cursor-not-allowed" : ""
               }`}
             >

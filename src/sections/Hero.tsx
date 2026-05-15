@@ -89,12 +89,16 @@ export function Hero() {
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover"
-          src="/hero-video.mp4"
+          poster="/hero-poster.jpg"
           muted
           loop
           playsInline
           autoPlay
-        />
+          preload="metadata"
+        >
+          <source src="/hero-video.webm" type="video/webm" />
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a]/60 to-transparent" />
         <div className="absolute bottom-8 left-8 right-8">
           <div className="bg-[#F9FF00] border-[3px] border-black p-4 inline-block">

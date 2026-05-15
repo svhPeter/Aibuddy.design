@@ -6,7 +6,7 @@ import ToolDetail from "./pages/ToolDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
-import { ChatWidget } from "./components/ChatWidget";
+import { AIAssistantWidget } from "./components/ai/AIAssistantWidget";
 
 export default function App() {
   return (
@@ -23,7 +23,8 @@ export default function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <ChatWidget />
+      <AIAssistantWidget />
     </>
   );
 }
+

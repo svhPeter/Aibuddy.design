@@ -2,6 +2,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "framework": "vite",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.aibuddy.design" }],
+      "destination": "https://aibuddy.design/$1",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/ai/:path*", "destination": "/api/ai/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
-

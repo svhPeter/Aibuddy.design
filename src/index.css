@@ -83,7 +83,14 @@
   }
   .hover-yellow:hover {
     background-color: var(--color-yellow);
+    color: var(--color-black);
   }
+
+  /* ───────────────────────────────────────────────────────
+     BUTTONS — base + variants
+     Each variant explicitly sets hover, active, focus-visible
+     so text color ALWAYS contrasts with the background.
+     ─────────────────────────────────────────────────────── */
   .btn-brutal {
     font-family: "Oswald", sans-serif;
     text-transform: uppercase;
@@ -91,38 +98,117 @@
     border: 3px solid var(--color-black);
     padding: 12px 24px;
     font-weight: 600;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .btn-brutal:hover {
-    background: var(--color-white);
-    border-color: var(--color-black);
+
+  /* Active press-down micro-animation for all variants */
+  .btn-brutal:active {
+    transform: translateY(1px);
   }
+
+  /* Focus ring for keyboard navigation */
+  .btn-brutal:focus-visible {
+    outline: 3px solid var(--color-red);
+    outline-offset: 2px;
+  }
+
+  /* ── Yellow variant ──────────────────────────────────── */
   .btn-brutal-yellow {
     background: var(--color-yellow);
     color: var(--color-black);
   }
-  .btn-brutal-red {
-    background: var(--color-red);
-    color: var(--color-white);
+  .btn-brutal-yellow:hover {
+    background: var(--color-black);
+    color: var(--color-yellow);
+    border-color: var(--color-black);
   }
+  .btn-brutal-yellow:active {
+    background: var(--color-black);
+    color: var(--color-yellow);
+  }
+
+  /* ── Black variant ───────────────────────────────────── */
   .btn-brutal-black {
     background: var(--color-black);
     color: var(--color-white);
   }
+  .btn-brutal-black:hover {
+    background: var(--color-yellow);
+    color: var(--color-black);
+    border-color: var(--color-black);
+  }
+  .btn-brutal-black:active {
+    background: var(--color-yellow);
+    color: var(--color-black);
+  }
+
+  /* ── Red variant ─────────────────────────────────────── */
+  .btn-brutal-red {
+    background: var(--color-red);
+    color: var(--color-white);
+  }
+  .btn-brutal-red:hover {
+    background: var(--color-white);
+    color: var(--color-red);
+    border-color: var(--color-red);
+  }
+  .btn-brutal-red:active {
+    background: var(--color-white);
+    color: var(--color-red);
+  }
+
+  /* ── Ghost / outline variant (white bg, black border) ─ */
+  .btn-brutal-ghost {
+    background: var(--color-white);
+    color: var(--color-black);
+  }
+  .btn-brutal-ghost:hover {
+    background: var(--color-black);
+    color: var(--color-white);
+    border-color: var(--color-black);
+  }
+  .btn-brutal-ghost:active {
+    background: var(--color-black);
+    color: var(--color-white);
+  }
+
+  /* ── Interactive card / list-item hover ───────────────
+     Use on hoverable rows, cards, tool grids.
+     Always goes yellow-bg → black text on hover. */
+  .interactive-brutal {
+    transition: background-color 0.15s ease, color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .interactive-brutal:hover {
+    background-color: var(--color-yellow);
+    color: var(--color-black);
+  }
+
+  /* ───────────────────────────────────────────────────────
+     INPUTS
+     ─────────────────────────────────────────────────────── */
   .input-brutal {
     border: 3px solid var(--color-black);
     padding: 12px 16px;
     font-family: "Inter", sans-serif;
     font-size: 14px;
     background: var(--color-white);
+    color: var(--color-black);
     outline: none;
     transition: border-color 0.15s ease;
     width: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
   .input-brutal:focus {
     border-color: var(--color-red);
   }
+  .input-brutal:focus-visible {
+    border-color: var(--color-red);
+    outline: none;
+  }
+
   .grid-brutal {
     display: grid;
     gap: 0;

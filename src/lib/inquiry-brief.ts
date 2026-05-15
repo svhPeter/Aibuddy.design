@@ -48,9 +48,7 @@ export function buildInquiryBody(input: InquiryBriefInput): string {
 /** Reads a public WhatsApp deep link (https://wa.me/… or custom chat link). */
 export function getWhatsappBaseUrl(): string | undefined {
   const raw = (
-    import.meta.env.VITE_WHATSAPP_URL?.trim() ||
-    import.meta.env.NEXT_PUBLIC_WHATSAPP_URL?.trim() ||
-    ""
+    import.meta.env.VITE_WHATSAPP_URL?.trim() || ""
   ).replace(/\s/g, "");
   if (!raw) return undefined;
   if (/^https?:\/\//i.test(raw)) return raw;

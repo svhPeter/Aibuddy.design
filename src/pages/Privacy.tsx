@@ -2,8 +2,15 @@ import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { siteConfig } from "@/config/site";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export default function Privacy() {
+  usePageMeta({
+    title: "Privacy Policy — AIBuddy",
+    description: "How AIBuddy handles your data. Browser-based tools keep files on your device. Plain-language privacy notes.",
+    canonical: "https://aibuddy.design/privacy",
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />

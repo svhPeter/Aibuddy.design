@@ -2,8 +2,15 @@ import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { siteConfig } from "@/config/site";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export default function About() {
+  usePageMeta({
+    title: "About — AIBuddy",
+    description: "Learn how AIBuddy works — direct access to the builder, plain-language scoping, transparent milestones. Software studio based in Karachi.",
+    canonical: "https://aibuddy.design/about",
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -52,7 +59,7 @@ export default function About() {
         <Link to="/tools" className="btn-brutal btn-brutal-black text-sm py-2 px-4">
           Free tools
         </Link>
-        <Link to="/" className="btn-brutal border-[3px] border-black bg-white text-sm py-2 px-4">
+        <Link to="/" className="btn-brutal btn-brutal-ghost text-sm py-2 px-4">
           <ArrowLeft size={14} className="inline mr-1" />
           Home
         </Link>

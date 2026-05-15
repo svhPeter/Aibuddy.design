@@ -12,6 +12,7 @@ import { ImageConverterTool } from "@/components/tools/ImageConverterTool";
 import { SocialResizeTool } from "@/components/tools/SocialResizeTool";
 import { WatermarkTool } from "@/components/tools/WatermarkTool";
 import { JpgPdfTool } from "@/components/tools/JpgPdfTool";
+import { usePageMeta } from "@/hooks/use-page-meta";
 import type { ReactNode } from "react";
 
 const TOOL_PANELS: Record<string, ReactNode> = {
@@ -36,6 +37,12 @@ export default function ToolDetail() {
   }
 
   const tool = getToolById(toolId);
+
+  usePageMeta({
+    title: tool ? `${tool.name} — Free Online Tool — AIBuddy` : "Tool Not Found — AIBuddy",
+    description: tool?.description ?? "This tool was not found in the AIBuddy catalog.",
+    canonical: tool ? `https://aibuddy.design/tools/${tool.id}` : undefined,
+  });
 
   if (!tool) {
     return (
@@ -64,7 +71,7 @@ export default function ToolDetail() {
       <div className="border-b-[3px] border-black px-6 md:px-12 lg:px-16 py-12">
         <Link
           to="/tools"
-          className="inline-flex items-center gap-2 font-oswald text-sm uppercase tracking-wider hover:text-[#FF0004] transition-colors mb-6"
+          className="inline-flex items-center gap-2 font-oswald text-sm uppercase tracking-wider hover:text-[#FF0004] active:text-[#1a1a1a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF0004] transition-colors mb-6"
         >
           <ArrowLeft size={16} />
           Back to Tools
@@ -115,7 +122,7 @@ export default function ToolDetail() {
             </Link>
             <Link
               to="/#inquiry"
-              className="w-full block text-center font-inter text-sm text-white/80 underline"
+              className="w-full block text-center font-inter text-sm text-white/80 underline hover:text-[#F9FF00] active:text-white transition-colors"
             >
               Project inquiry
             </Link>

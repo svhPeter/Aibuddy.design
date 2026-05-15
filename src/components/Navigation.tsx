@@ -65,7 +65,7 @@ export function Navigation() {
               <button
                 key={i}
                 onClick={item.action}
-                className="flex-1 border-r-[3px] border-black px-4 py-4 font-oswald text-sm font-semibold uppercase tracking-wide hover:bg-[#F9FF00] transition-colors text-center"
+                className="flex-1 border-r-[3px] border-black px-4 py-4 font-oswald text-sm font-semibold uppercase tracking-wide hover:bg-[#F9FF00] hover:text-[#1a1a1a] active:bg-[#1a1a1a] active:text-[#F9FF00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF0004] transition-colors text-center"
               >
                 {item.label}
               </button>
@@ -104,7 +104,11 @@ export function Navigation() {
             />
             <span className="leading-none">{siteConfig.name}</span>
           </Link>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="p-2">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 hover:bg-[#F9FF00] hover:text-[#1a1a1a] active:bg-[#1a1a1a] active:text-[#F9FF00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF0004] transition-colors"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -115,7 +119,7 @@ export function Navigation() {
               <button
                 key={i}
                 onClick={item.action}
-                className="w-full text-left px-6 py-4 border-b-[3px] border-black font-oswald text-lg font-semibold uppercase hover:bg-[#F9FF00] transition-colors"
+                className="w-full text-left px-6 py-4 border-b-[3px] border-black font-oswald text-lg font-semibold uppercase hover:bg-[#F9FF00] hover:text-[#1a1a1a] active:bg-[#1a1a1a] active:text-[#F9FF00] transition-colors"
               >
                 {item.label}
               </button>

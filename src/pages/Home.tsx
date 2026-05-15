@@ -6,6 +6,7 @@ import { Pricing } from "@/sections/Pricing";
 import { Roster } from "@/sections/Roster";
 import { InquiryForm } from "@/sections/InquiryForm";
 import { siteConfig } from "@/config/site";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const footerNavItems: { label: string; href: string }[] = [
   { label: "Work", href: "#portfolio" },
@@ -17,6 +18,12 @@ const footerNavItems: { label: string; href: string }[] = [
 ];
 
 export default function Home() {
+  usePageMeta({
+    title: "AIBuddy — AI Engineering Studio",
+    description: "Web, mobile, SaaS, AI, 3D — production-grade code, fast turnaround, no-surprise pricing. Building from Karachi for clients worldwide.",
+    canonical: "https://aibuddy.design/",
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -81,16 +88,20 @@ export default function Home() {
               Social
             </h4>
             <div className="space-y-2">
-              {["Instagram", "Behance", "Dribbble", "LinkedIn"].map(
-                (item) => (
-                  <span
-                    key={item}
-                    className="block font-inter text-sm text-white/70 hover:text-[#F9FF00] transition-colors cursor-pointer"
-                  >
-                    {item}
-                  </span>
-                )
-              )}
+              {[
+                { label: "Instagram", href: "https://instagram.com/aibuddy.design" },
+                { label: "LinkedIn", href: "https://linkedin.com/company/aibuddy-design" },
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block font-inter text-sm text-white/70 hover:text-[#F9FF00] transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
           </div>
         </div>

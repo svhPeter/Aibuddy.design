@@ -127,9 +127,9 @@ export function Process() {
                     {step.details.map((detail, j) => (
                       <div
                         key={j}
-                        className="flex items-center gap-4 px-4 py-3 border-b-[3px] border-black last:border-b-0 hover:bg-[#F9FF00] transition-colors"
+                        className="flex items-center gap-4 px-4 py-3 border-b-[3px] border-black last:border-b-0 hover:bg-[#F9FF00] hover:text-[#1a1a1a] active:bg-[#1a1a1a] active:text-[#F9FF00] transition-colors group/detail"
                       >
-                        <span className="font-oswald text-xs font-bold text-[#FF0004]">
+                        <span className="font-oswald text-xs font-bold text-[#FF0004] group-active/detail:text-[#F9FF00]">
                           {step.num}.{j + 1}
                         </span>
                         <span className="font-inter text-sm font-medium uppercase tracking-wide">

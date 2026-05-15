@@ -1,8 +1,14 @@
 import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export default function NotFound() {
+  usePageMeta({
+    title: "Page Not Found — AIBuddy",
+    description: "The page you are looking for does not exist or has been moved.",
+  });
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />

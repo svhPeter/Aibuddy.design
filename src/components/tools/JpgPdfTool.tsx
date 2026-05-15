@@ -208,7 +208,7 @@ export function JpgPdfTool() {
               type="button"
               onClick={() => void refreshPreview()}
               disabled={pdfBusy || !list.length}
-              className="inline-flex items-center gap-2 btn-brutal border-[3px] border-black bg-white"
+              className="inline-flex items-center gap-2 btn-brutal btn-brutal-ghost"
             >
               {pdfBusy ? (
                 <Loader2 className="animate-spin" size={16} />

@@ -89,7 +89,7 @@ export function ImageEnlargerTool() {
                 key={s}
                 type="button"
                 onClick={() => apply(s)}
-                className="btn-brutal border px-2 py-1 text-xs font-oswald"
+                className="btn-brutal btn-brutal-ghost px-2 py-1 text-xs font-oswald"
               >
                 {s}×
               </button>

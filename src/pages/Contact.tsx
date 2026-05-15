@@ -4,8 +4,15 @@ import { ArrowLeft, Mail, MessageCircle, Wrench, FileText, Send } from "lucide-r
 import { Navigation } from "@/components/Navigation";
 import { siteConfig } from "@/config/site";
 import { getWhatsappBaseUrl } from "@/lib/inquiry-brief";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 export default function Contact() {
+  usePageMeta({
+    title: "Contact — AIBuddy",
+    description: "Get in touch with AIBuddy. Share your project goals, timeline, and budget — we'll reply with fit, timeline, and a clear next step.",
+    canonical: "https://aibuddy.design/contact",
+  });
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -79,15 +86,15 @@ export default function Contact() {
           <div className="space-y-0 border-[3px] border-black mb-10">
             <a
               href={`mailto:${siteConfig.links.email}`}
-              className="block p-4 border-b-[3px] border-black hover:bg-[#F9FF00] transition-colors group"
+              className="block p-4 border-b-[3px] border-black hover:bg-[#F9FF00] active:bg-[#1a1a1a] active:text-white transition-colors group"
             >
               <div className="flex items-start gap-3">
-                <Mail className="shrink-0 mt-0.5 text-[#1a1a1a] group-hover:scale-105 transition-transform" size={20} />
+                <Mail className="shrink-0 mt-0.5 text-[#1a1a1a] group-hover:scale-105 group-active:text-white transition-transform" size={20} />
                 <div>
-                  <div className="font-oswald text-xs font-bold uppercase tracking-widest text-[#1a1a1a]/50">
+                  <div className="font-oswald text-xs font-bold uppercase tracking-widest text-[#1a1a1a]/50 group-hover:text-[#1a1a1a]/70 group-active:text-white/50">
                     Email
                   </div>
-                  <div className="font-inter text-sm font-medium mt-0.5 break-all">
+                  <div className="font-inter text-sm font-medium mt-0.5 break-all group-hover:text-[#1a1a1a] group-active:text-white">
                     {siteConfig.links.email}
                   </div>
                 </div>
@@ -107,14 +114,14 @@ export default function Contact() {
                 href={wa}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-start gap-3 p-4 hover:bg-[#F9FF00] transition-colors"
+                className="flex items-start gap-3 p-4 hover:bg-[#F9FF00] hover:text-[#1a1a1a] active:bg-[#1a1a1a] active:text-white transition-colors group"
               >
-                <MessageCircle size={20} className="shrink-0 mt-0.5" />
+                <MessageCircle size={20} className="shrink-0 mt-0.5 group-active:text-white" />
                 <div>
-                  <div className="font-oswald text-xs font-bold uppercase tracking-widest text-[#1a1a1a]/50">
+                  <div className="font-oswald text-xs font-bold uppercase tracking-widest text-[#1a1a1a]/50 group-hover:text-[#1a1a1a]/70 group-active:text-white/50">
                     WhatsApp
                   </div>
-                  <div className="font-inter text-sm mt-0.5">
+                  <div className="font-inter text-sm mt-0.5 group-hover:text-[#1a1a1a] group-active:text-white">
                     Open chat (same number we use for project inquiries).
                   </div>
                 </div>
@@ -132,7 +139,7 @@ export default function Contact() {
             </Link>
             <Link
               to="/tools"
-              className="inline-flex items-center gap-2 btn-brutal border-[3px] border-black bg-white text-sm py-3 px-4"
+              className="inline-flex items-center gap-2 btn-brutal btn-brutal-ghost text-sm py-3 px-4"
             >
               <Wrench size={16} />
               Free tools
