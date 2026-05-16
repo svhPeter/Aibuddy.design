@@ -14,7 +14,7 @@ const footerNavItems: { label: string; href: string }[] = [
   { label: "Pricing", href: "#pricing" },
   { label: "Services", href: "#services" },
   { label: "Inquiry", href: "#inquiry" },
-  { label: "Tools", href: "/tools" },
+  { label: "Labs", href: "/labs" },
 ];
 
 export default function Home() {

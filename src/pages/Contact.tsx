@@ -138,7 +138,7 @@ export default function Contact() {
               Project inquiry
             </Link>
             <Link
-              to="/tools"
+              to="/labs"
               className="inline-flex items-center gap-2 btn-brutal btn-brutal-ghost text-sm py-3 px-4"
             >
               <Wrench size={16} />

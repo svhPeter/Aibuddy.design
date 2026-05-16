@@ -58,7 +58,7 @@ export default function Privacy() {
             Tools: what stays in your browser
           </h2>
           <p>
-            Image utilities (compress, convert, resize, watermark, PDF merge) are
+            Image utilities (compress, convert, resize, watermark) are
             designed to process files locally in your tab. If you close the tab, the
             data is gone.
           </p>

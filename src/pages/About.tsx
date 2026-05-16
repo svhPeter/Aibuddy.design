@@ -56,8 +56,8 @@ export default function About() {
         <Link to="/contact" className="btn-brutal btn-brutal-yellow text-sm py-2 px-4">
           Get in touch
         </Link>
-        <Link to="/tools" className="btn-brutal btn-brutal-black text-sm py-2 px-4">
-          Free tools
+        <Link to="/labs" className="btn-brutal btn-brutal-black text-sm py-2 px-4">
+          Labs
         </Link>
         <Link to="/" className="btn-brutal btn-brutal-ghost text-sm py-2 px-4">
           <ArrowLeft size={14} className="inline mr-1" />

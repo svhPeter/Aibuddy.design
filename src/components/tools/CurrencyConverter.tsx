@@ -121,9 +121,9 @@ export function CurrencyConverter() {
         link:{" "}
         <a
           className="underline font-semibold"
-          href="https://aibuddy.design/tools/currency-converter"
+          href="https://aibuddy.design/labs/currency-converter"
         >
-          aibuddy.design/tools/currency-converter
+          aibuddy.design/labs/currency-converter
         </a>
         .
       </p>

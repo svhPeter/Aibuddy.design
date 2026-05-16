@@ -20,11 +20,7 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://aibuddy.design/tools/pdf-editor</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
+
   <url>
     <loc>https://aibuddy.design/tools/image-compressor</loc>
     <changefreq>monthly</changefreq>

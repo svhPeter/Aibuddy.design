@@ -73,10 +73,10 @@ export function Navigation() {
           </div>
           <div className="col-span-3 flex items-center justify-end px-6 gap-3">
             <Link
-              to="/tools"
+              to="/labs"
               className="btn-brutal btn-brutal-black text-xs py-2 px-4"
             >
-              TOOLS
+              LABS
             </Link>
             <Link
               to="/contact"
@@ -127,10 +127,10 @@ export function Navigation() {
             <div className="px-6 py-4">
               <div className="flex flex-col gap-3">
                 <Link
-                  to="/tools"
+                  to="/labs"
                   className="btn-brutal btn-brutal-black text-sm py-3 block text-center"
                 >
-                  TOOLS
+                  LABS
                 </Link>
                 <Link
                   to="/contact"
