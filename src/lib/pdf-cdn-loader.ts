@@ -1,30 +1,23 @@
 /**
- * Lazy CDN loader for pdf-lib and pdf.js (pdfjs-dist).
- * Zero build-time dependency — loaded via UMD <script> injection at runtime.
+ * Lazy CDN loader for pdf-lib and pdf.js — with jsDelivr + unpkg fallback.
  */
+
+import { loadScriptWithFallback } from "@/lib/cdn-loader";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const PDFLIB_CDN = "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js";
-const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const PDFJS_WORKER_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+// CDN URLs with fallback (jsDelivr primary, unpkg secondary)
+const PDFLIB_URLS = [
+  "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js",
+  "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js",
+];
+const PDFJS_URLS = [
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+];
+const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = src;
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.appendChild(s);
-  });
-}
-
-// ── pdf-lib types (subset we use) ────────────────────────────────────────
+// ── pdf-lib types ────────────────────────────────────────────────────────
 
 export interface PdfLibModule {
   PDFDocument: {
@@ -57,7 +50,7 @@ export interface PdfLibPage {
   drawLine(opts: Record<string, any>): void;
 }
 
-// ── pdf.js types (subset we use) ─────────────────────────────────────────
+// ── pdf.js types ─────────────────────────────────────────────────────────
 
 export interface PdfJsModule {
   getDocument(src: { data: ArrayBuffer | Uint8Array }): { promise: Promise<PdfJsDoc> };
@@ -75,26 +68,26 @@ export interface PdfJsPage {
   render(opts: { canvasContext: CanvasRenderingContext2D; viewport: any }): { promise: Promise<void> };
 }
 
-// ── Loaders ──────────────────────────────────────────────────────────────
+// ── Loaders with cache ───────────────────────────────────────────────────
 
 let pdfLibCache: PdfLibModule | null = null;
 let pdfJsCache: PdfJsModule | null = null;
 
 export async function loadPdfLib(): Promise<PdfLibModule> {
   if (pdfLibCache) return pdfLibCache;
-  await loadScript(PDFLIB_CDN);
+  await loadScriptWithFallback(PDFLIB_URLS, "PDF library");
   const mod = (window as any).PDFLib;
-  if (!mod?.PDFDocument) throw new Error("pdf-lib failed to load from CDN.");
+  if (!mod?.PDFDocument) throw new Error("PDF library failed to initialize. Please refresh and try again.");
   pdfLibCache = mod as PdfLibModule;
   return pdfLibCache;
 }
 
 export async function loadPdfJs(): Promise<PdfJsModule> {
   if (pdfJsCache) return pdfJsCache;
-  await loadScript(PDFJS_CDN);
+  await loadScriptWithFallback(PDFJS_URLS, "PDF renderer");
   const mod = (window as any).pdfjsLib;
-  if (!mod?.getDocument) throw new Error("pdf.js failed to load from CDN.");
-  mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+  if (!mod?.getDocument) throw new Error("PDF renderer failed to initialize. Please refresh and try again.");
+  mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
   pdfJsCache = mod as PdfJsModule;
   return pdfJsCache;
 }

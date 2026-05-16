@@ -1,14 +1,12 @@
 /**
- * Video Compressor Tool — client-side video compression via ffmpeg.wasm.
+ * Video Compressor — production-grade browser-based video compression.
  *
- * FFmpeg is loaded 100% from CDN at runtime using a <script> tag injection.
- * This means:
- *   - ZERO npm dependency on @ffmpeg/ffmpeg at build time
- *   - ZERO bytes added to the initial JS bundle
- *   - The ~25 MB WASM core is only fetched when the user clicks "Compress"
- *
- * Supports MP4 and WebM input/output up to 500 MB.
- * Three compression modes: High Quality, Balanced, Maximum Compression.
+ * Architecture:
+ *   - @ffmpeg/util is NO LONGER used (the broken CDN dependency)
+ *   - toBlobURL is implemented locally in cdn-loader.ts
+ *   - @ffmpeg/ffmpeg loaded via jsDelivr (primary) + unpkg (fallback)
+ *   - @ffmpeg/core WASM loaded via jsDelivr (primary) + unpkg (fallback)
+ *   - Automatic retry with user-friendly error messages
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -16,108 +14,52 @@ import { downloadBlob } from "@/lib/image-tool-helpers";
 import { useObjectUrl } from "@/hooks/use-object-url";
 import { ToolResultPanel } from "@/components/tools/ToolResultPanel";
 import {
-  Download,
-  Loader2,
-  Upload,
-  X,
-  Film,
-  Zap,
-  Shield,
-  Minimize2,
+  Download, Loader2, Upload, X, Film, Zap, Shield, Minimize2,
+  CheckCircle2, AlertTriangle, Info,
 } from "lucide-react";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type CompressionMode = "high-quality" | "balanced" | "max-compression";
-
-type CompressState =
-  | "idle"
-  | "loading-ffmpeg"
-  | "compressing"
-  | "done"
-  | "error";
-
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
-
-const MODES: {
-  id: CompressionMode;
-  label: string;
-  description: string;
-  icon: typeof Zap;
-}[] = [
-  {
-    id: "high-quality",
-    label: "High Quality",
-    description: "Minimal visual loss, moderate file reduction",
-    icon: Shield,
-  },
-  {
-    id: "balanced",
-    label: "Balanced",
-    description: "Good quality with strong compression",
-    icon: Zap,
-  },
-  {
-    id: "max-compression",
-    label: "Maximum Compression",
-    description: "Smallest file size, visible quality loss",
-    icon: Minimize2,
-  },
-];
-
-function getCrfArgs(mode: CompressionMode): string[] {
-  switch (mode) {
-    case "high-quality":
-      return ["-crf", "23", "-preset", "slow"];
-    case "balanced":
-      return ["-crf", "28", "-preset", "medium"];
-    case "max-compression":
-      return ["-crf", "35", "-preset", "fast"];
-  }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-// ---------------------------------------------------------------------------
-// FFmpeg loader — pure CDN, zero npm dependency at build time
-// ---------------------------------------------------------------------------
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const FFMPEG_CDN = "https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js";
-const UTIL_CDN = "https://unpkg.com/@ffmpeg/util@0.12.2/dist/umd/util.js";
-const CORE_CDN = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+// ── Constants ────────────────────────────────────────────────────────────
 
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = src;
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.appendChild(s);
-  });
-}
+type Mode = "high-quality" | "balanced" | "max-compression";
+type State = "idle" | "stage-engine" | "stage-wasm" | "compressing" | "done" | "error";
+
+const MAX_FILE = 500 * 1024 * 1024;
+
+const MODES: { id: Mode; label: string; desc: string; icon: typeof Zap; crf: string; preset: string; vpxCrf: string }[] = [
+  { id: "high-quality",    label: "High Quality",         desc: "Minimal loss, moderate reduction",    icon: Shield,   crf: "23", preset: "slow",   vpxCrf: "30" },
+  { id: "balanced",        label: "Balanced",             desc: "Good quality, strong compression",    icon: Zap,      crf: "28", preset: "medium", vpxCrf: "35" },
+  { id: "max-compression", label: "Maximum Compression",  desc: "Smallest file, visible quality loss", icon: Minimize2, crf: "35", preset: "fast",   vpxCrf: "45" },
+];
+
+const fmt = (b: number) => {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const fmtDur = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+// CDN URLs with fallback
+const FFMPEG_URLS = [
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js",
+  "https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js",
+];
+const CORE_JS_URLS = [
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
+  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
+];
+const CORE_WASM_URLS = [
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm",
+  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm",
+];
+
+// ── FFmpeg Loader ────────────────────────────────────────────────────────
 
 interface FFmpegInstance {
-  on(event: string, callback: (e: any) => void): void;
-  load(config?: Record<string, any>): Promise<void>;
+  on(event: string, cb: (e: any) => void): void;
+  load(cfg?: Record<string, any>): Promise<void>;
   writeFile(name: string, data: Uint8Array | string): Promise<void>;
   readFile(name: string): Promise<Uint8Array>;
   deleteFile(name: string): Promise<void>;
@@ -125,533 +67,397 @@ interface FFmpegInstance {
   terminate(): void;
 }
 
-async function loadFFmpeg(
+async function initFFmpeg(
+  onStage: (stage: string) => void,
   onProgress: (p: { progress: number; time: number }) => void,
 ): Promise<FFmpegInstance> {
-  // Load UMD bundles from CDN
-  await loadScript(UTIL_CDN);
-  await loadScript(FFMPEG_CDN);
+  const { loadScriptWithFallback, toBlobURL } = await import("@/lib/cdn-loader");
+
+  // Stage 1: Load FFmpeg library
+  onStage("Loading FFmpeg engine…");
+  await loadScriptWithFallback(FFMPEG_URLS, "FFmpeg engine");
 
   const FFmpegWASM = (window as any).FFmpegWASM;
-  const FFmpegUtil = (window as any).FFmpegUtil;
-
-  if (!FFmpegWASM?.FFmpeg) {
-    throw new Error(
-      "FFmpeg failed to load. Check your internet connection and try again.",
-    );
-  }
+  if (!FFmpegWASM?.FFmpeg) throw new Error("FFmpeg library failed to initialize.");
 
   const ffmpeg = new FFmpegWASM.FFmpeg();
   ffmpeg.on("progress", onProgress);
 
-  // Load WASM core from CDN
-  const coreURL = `${CORE_CDN}/ffmpeg-core.js`;
-  const wasmURL = `${CORE_CDN}/ffmpeg-core.wasm`;
+  // Stage 2: Load WASM core
+  onStage("Downloading compression engine (≈25 MB)…");
 
-  if (FFmpegUtil?.toBlobURL) {
-    await ffmpeg.load({
-      coreURL: await FFmpegUtil.toBlobURL(coreURL, "text/javascript"),
-      wasmURL: await FFmpegUtil.toBlobURL(wasmURL, "application/wasm"),
-    });
-  } else {
-    // Fallback: direct URL loading
-    await ffmpeg.load({ coreURL, wasmURL });
+  let coreURL: string | undefined;
+  let wasmURL: string | undefined;
+
+  // Try each core JS URL
+  for (const url of CORE_JS_URLS) {
+    try { coreURL = await toBlobURL(url, "text/javascript"); break; } catch { /* next */ }
   }
+  if (!coreURL) throw new Error("Unable to download FFmpeg core. Check your connection.");
+
+  // Try each WASM URL
+  for (const url of CORE_WASM_URLS) {
+    try { wasmURL = await toBlobURL(url, "application/wasm"); break; } catch { /* next */ }
+  }
+  if (!wasmURL) throw new Error("Unable to download WASM binary. Check your connection.");
+
+  onStage("Initializing compression engine…");
+  await ffmpeg.load({ coreURL, wasmURL });
 
   return ffmpeg as FFmpegInstance;
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+// ── Component ────────────────────────────────────────────────────────────
 
 export function VideoCompressorTool() {
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<CompressionMode>("balanced");
-  const [outputFormat, setOutputFormat] = useState<"mp4" | "webm">("mp4");
-  const [state, setState] = useState<CompressState>("idle");
+  const [mode, setMode] = useState<Mode>("balanced");
+  const [outputFmt, setOutputFmt] = useState<"mp4" | "webm">("mp4");
+  const [state, setState] = useState<State>("idle");
   const [progress, setProgress] = useState(0);
-  const [progressText, setProgressText] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [stageText, setStageText] = useState("");
+  const [error, setError] = useState("");
   const [outputBlob, setOutputBlob] = useState<Blob | null>(null);
-  const [videoDuration, setVideoDuration] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [resolution, setResolution] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [compressTime, setCompressTime] = useState(0);
 
-  const ffmpegRef = useRef<FFmpegInstance | null>(null);
+  const ffRef = useRef<FFmpegInstance | null>(null);
   const abortRef = useRef(false);
+  const startTimeRef = useRef(0);
 
   const previewUrl = useObjectUrl(outputBlob);
 
-  // Get video duration when file changes
+  // Get video metadata
   useEffect(() => {
-    if (!file) {
-      setVideoDuration(0);
-      return;
-    }
+    if (!file) { setDuration(0); setResolution(""); return; }
     const url = URL.createObjectURL(file);
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    video.onloadedmetadata = () => {
-      setVideoDuration(video.duration);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => {
+      setDuration(v.duration);
+      setResolution(`${v.videoWidth}×${v.videoHeight}`);
       URL.revokeObjectURL(url);
     };
-    video.onerror = () => URL.revokeObjectURL(url);
-    video.src = url;
+    v.onerror = () => URL.revokeObjectURL(url);
+    v.src = url;
   }, [file]);
 
-  // ── File handlers ──────────────────────────────────────────────────────
-
-  const validateAndSetFile = useCallback((f: File | null) => {
-    setOutputBlob(null);
-    setErrorMsg("");
-    setState("idle");
-    setProgress(0);
-
-    if (!f) {
-      setFile(null);
-      return;
+  const pickFile = useCallback((f: File | null) => {
+    setOutputBlob(null); setError(""); setState("idle"); setProgress(0);
+    if (!f) { setFile(null); return; }
+    if (!f.type.startsWith("video/") && !f.name.match(/\.(mp4|webm|mkv)$/i)) {
+      setError("Unsupported format. Please use MP4 or WebM."); return;
     }
-
-    const validTypes = ["video/mp4", "video/webm", "video/x-matroska"];
-    if (!validTypes.includes(f.type) && !f.name.match(/\.(mp4|webm|mkv)$/i)) {
-      setErrorMsg("Unsupported format. Use MP4 or WebM.");
-      return;
-    }
-    if (f.size > MAX_FILE_SIZE) {
-      setErrorMsg(`File too large. Maximum is ${formatBytes(MAX_FILE_SIZE)}.`);
-      return;
-    }
-
+    if (f.size > MAX_FILE) { setError(`File exceeds ${fmt(MAX_FILE)} limit.`); return; }
     setFile(f);
-    if (f.name.endsWith(".webm")) {
-      setOutputFormat("webm");
-    } else {
-      setOutputFormat("mp4");
-    }
+    setOutputFmt(f.name.endsWith(".webm") ? "webm" : "mp4");
   }, []);
 
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const f = e.dataTransfer.files[0];
-      if (f) validateAndSetFile(f);
-    },
-    [validateAndSetFile],
-  );
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    pickFile(e.dataTransfer.files[0] ?? null);
+  }, [pickFile]);
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const onDragLeave = useCallback(() => setDragOver(false), []);
-
-  // ── Compression ────────────────────────────────────────────────────────
+  // ── Compress ───────────────────────────────────────────────────────────
 
   const compress = useCallback(async () => {
     if (!file) return;
     abortRef.current = false;
-    setErrorMsg("");
-    setOutputBlob(null);
-    setProgress(0);
+    setError(""); setOutputBlob(null); setProgress(0);
+    startTimeRef.current = Date.now();
 
     try {
-      setState("loading-ffmpeg");
-      setProgressText("Loading FFmpeg engine…");
-
-      if (!ffmpegRef.current) {
-        ffmpegRef.current = await loadFFmpeg((ev) => {
-          if (abortRef.current) return;
-          const pct = Math.min(Math.round(ev.progress * 100), 100);
-          setProgress(pct);
-          const timeSec = Math.max(0, ev.time / 1_000_000);
-          setProgressText(
-            `Compressing… ${pct}%${timeSec > 0 ? ` (${formatDuration(timeSec)} processed)` : ""}`,
-          );
-        });
+      // Load FFmpeg if needed
+      if (!ffRef.current) {
+        setState("stage-engine");
+        ffRef.current = await initFFmpeg(
+          (stage) => setStageText(stage),
+          (ev) => {
+            if (abortRef.current) return;
+            setProgress(Math.min(Math.round(ev.progress * 100), 100));
+          },
+        );
       }
-
       if (abortRef.current) return;
 
       setState("compressing");
-      setProgressText("Reading file…");
+      setStageText("Reading file…");
+      setProgress(0);
 
-      const ffmpeg = ffmpegRef.current;
-      const inputExt = file.name.split(".").pop() || "mp4";
-      const inputName = `input.${inputExt}`;
-      const outputName = `output.${outputFormat}`;
+      const ff = ffRef.current;
+      const ext = file.name.split(".").pop() || "mp4";
+      const inName = `in.${ext}`;
+      const outName = `out.${outputFmt}`;
 
-      const arrayBuf = await file.arrayBuffer();
+      const buf = await file.arrayBuffer();
+      if (abortRef.current) return;
+      await ff.writeFile(inName, new Uint8Array(buf));
       if (abortRef.current) return;
 
-      await ffmpeg.writeFile(inputName, new Uint8Array(arrayBuf));
-      if (abortRef.current) return;
+      // Build args
+      const m = MODES.find((x) => x.id === mode)!;
+      const args = ["-i", inName];
 
-      // Build ffmpeg arguments
-      const args = ["-i", inputName];
-
-      if (outputFormat === "webm") {
-        const crfMap = {
-          "high-quality": "30",
-          balanced: "35",
-          "max-compression": "45",
-        } as const;
-        args.push(
-          "-c:v", "libvpx-vp9",
-          "-crf", crfMap[mode],
-          "-b:v", "0",
-          "-c:a", "libopus",
-          "-b:a", mode === "max-compression" ? "64k" : "128k",
-        );
+      if (outputFmt === "webm") {
+        args.push("-c:v", "libvpx-vp9", "-crf", m.vpxCrf, "-b:v", "0",
+                  "-c:a", "libopus", "-b:a", mode === "max-compression" ? "64k" : "128k");
       } else {
-        args.push(
-          "-c:v", "libx264",
-          ...getCrfArgs(mode),
-          "-c:a", "aac",
-          "-b:a", mode === "max-compression" ? "64k" : "128k",
-          "-movflags", "+faststart",
-        );
+        args.push("-c:v", "libx264", "-crf", m.crf, "-preset", m.preset,
+                  "-c:a", "aac", "-b:a", mode === "max-compression" ? "64k" : "128k",
+                  "-movflags", "+faststart");
       }
+      args.push("-y", outName);
 
-      args.push("-y", outputName);
-
-      setProgressText("Compressing…");
-      const exitCode = await ffmpeg.exec(args);
-
+      setStageText("Compressing video…");
+      const code = await ff.exec(args);
       if (abortRef.current) return;
-      if (exitCode !== 0) {
-        throw new Error(`FFmpeg exited with code ${exitCode}`);
-      }
+      if (code !== 0) throw new Error("Compression failed. The video format may be unsupported.");
 
-      const data = await ffmpeg.readFile(outputName);
+      const data = await ff.readFile(outName);
       const blob = new Blob([new Uint8Array(data)], {
-        type: outputFormat === "webm" ? "video/webm" : "video/mp4",
+        type: outputFmt === "webm" ? "video/webm" : "video/mp4",
       });
 
-      await ffmpeg.deleteFile(inputName).catch(() => {});
-      await ffmpeg.deleteFile(outputName).catch(() => {});
+      // Cleanup temp files
+      await ff.deleteFile(inName).catch(() => {});
+      await ff.deleteFile(outName).catch(() => {});
 
+      setCompressTime(Math.round((Date.now() - startTimeRef.current) / 1000));
       setOutputBlob(blob);
       setState("done");
-      setProgressText("");
     } catch (err) {
-      if (abortRef.current) {
-        setState("idle");
-        return;
-      }
+      if (abortRef.current) { setState("idle"); return; }
       setState("error");
-      const msg = (err as Error).message || "Compression failed.";
-      setErrorMsg(
-        msg.includes("SharedArrayBuffer")
-          ? "Your browser requires Cross-Origin Isolation headers to run FFmpeg. This works on Vercel with the production headers configured."
-          : msg,
-      );
+      setError((err as Error).message || "An unexpected error occurred.");
     }
-  }, [file, mode, outputFormat]);
+  }, [file, mode, outputFmt]);
 
   const cancel = useCallback(() => {
     abortRef.current = true;
-    setState("idle");
-    setProgress(0);
-    setProgressText("");
+    setState("idle"); setProgress(0); setStageText("");
   }, []);
 
   const reset = useCallback(() => {
-    setFile(null);
-    setOutputBlob(null);
-    setState("idle");
-    setProgress(0);
-    setProgressText("");
-    setErrorMsg("");
+    setFile(null); setOutputBlob(null); setState("idle");
+    setProgress(0); setStageText(""); setError(""); setCompressTime(0);
   }, []);
 
-  const downloadOutput = useCallback(() => {
+  const dl = useCallback(() => {
     if (!outputBlob || !file) return;
-    const baseName = file.name.replace(/\.[^.]+$/, "") || "video";
-    downloadBlob(outputBlob, `${baseName}-compressed.${outputFormat}`);
-  }, [outputBlob, file, outputFormat]);
+    downloadBlob(outputBlob, `${file.name.replace(/\.[^.]+$/, "")}-compressed.${outputFmt}`);
+  }, [outputBlob, file, outputFmt]);
 
-  const isProcessing = state === "loading-ffmpeg" || state === "compressing";
-  const reduction =
-    file && outputBlob
-      ? Math.round((1 - outputBlob.size / file.size) * 100)
-      : 0;
+  const isProcessing = state === "stage-engine" || state === "stage-wasm" || state === "compressing";
+  const reduction = file && outputBlob ? Math.round((1 - outputBlob.size / file.size) * 100) : 0;
+  const estimatedSize = file ? fmt(Math.round(file.size * (mode === "high-quality" ? 0.6 : mode === "balanced" ? 0.4 : 0.2))) : "";
 
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <p className="font-inter text-sm text-[#1a1a1a]/70 leading-relaxed">
-        Compress MP4 and WebM videos <strong>entirely in your browser</strong>{" "}
-        using FFmpeg — no uploads, no server, your files stay private. Max{" "}
-        {formatBytes(MAX_FILE_SIZE)}.
+        Compress MP4 and WebM videos <strong>entirely in your browser</strong> using FFmpeg.
+        No uploads, no server — your files stay private. Max {fmt(MAX_FILE)}.
       </p>
 
-      {/* ── Drop zone ────────────────────────────────────────────────── */}
+      {/* Drop zone */}
       {!file && (
         <div
           onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          className={`border-[3px] border-dashed p-10 text-center transition-colors cursor-pointer ${
-            dragOver
-              ? "border-[#F9FF00] bg-[#F9FF00]/10"
-              : "border-black bg-[#fafafa] hover:bg-[#F9FF00]/5"
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          className={`border-[3px] border-dashed p-12 text-center transition-all cursor-pointer ${
+            dragOver ? "border-[#F9FF00] bg-[#F9FF00]/10 scale-[1.01]" : "border-black bg-[#fafafa] hover:bg-[#F9FF00]/5 hover:border-[#1a1a1a]/60"
           }`}
-          onClick={() => document.getElementById("vc-file-input")?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              document.getElementById("vc-file-input")?.click();
-            }
-          }}
+          onClick={() => document.getElementById("vc-input")?.click()}
+          role="button" tabIndex={0} aria-label="Upload a video file"
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("vc-input")?.click(); } }}
         >
-          <Upload
-            size={32}
-            className={`mx-auto mb-3 ${
-              dragOver ? "text-[#F9FF00]" : "text-[#1a1a1a]/40"
-            }`}
-          />
+          <Upload size={36} className={`mx-auto mb-3 transition-colors ${dragOver ? "text-[#F9FF00]" : "text-[#1a1a1a]/30"}`} />
           <p className="font-oswald text-sm font-bold uppercase tracking-wider mb-1">
             {dragOver ? "Drop video here" : "Drag & drop a video"}
           </p>
-          <p className="font-inter text-xs text-[#1a1a1a]/50">
-            or click to browse · MP4, WebM · max {formatBytes(MAX_FILE_SIZE)}
-          </p>
-          <input
-            id="vc-file-input"
-            type="file"
-            accept="video/mp4,video/webm,.mp4,.webm"
-            className="hidden"
-            onChange={(e) => validateAndSetFile(e.target.files?.[0] ?? null)}
-          />
+          <p className="font-inter text-xs text-[#1a1a1a]/40">or click to browse · MP4, WebM · max {fmt(MAX_FILE)}</p>
+          <input id="vc-input" type="file" accept="video/mp4,video/webm,.mp4,.webm,.mkv" className="hidden" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
         </div>
       )}
 
-      {/* ── Error ────────────────────────────────────────────────────── */}
-      {errorMsg && (
-        <div className="border-[3px] border-[#FF0004] bg-red-50 p-4 flex items-start gap-3">
-          <X size={18} className="text-[#FF0004] shrink-0 mt-0.5" />
+      {/* Error */}
+      {error && (
+        <div className="border-[3px] border-[#FF0004] bg-red-50/80 p-4 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-[#FF0004] shrink-0 mt-0.5" />
           <div>
-            <p className="font-oswald text-xs font-bold uppercase text-[#FF0004]">
-              Error
-            </p>
-            <p className="font-inter text-sm text-[#FF0004]/80 mt-1">
-              {errorMsg}
-            </p>
+            <p className="font-oswald text-xs font-bold uppercase text-[#FF0004] tracking-wider">Something went wrong</p>
+            <p className="font-inter text-sm text-[#1a1a1a]/70 mt-1">{error}</p>
+            <button type="button" onClick={() => { setError(""); setState("idle"); }}
+              className="font-oswald text-[10px] font-bold uppercase tracking-wider text-[#FF0004] hover:underline mt-2">
+              Dismiss
+            </button>
           </div>
         </div>
       )}
 
-      {/* ── File loaded ──────────────────────────────────────────────── */}
+      {/* File loaded */}
       {file && (
         <>
-          {/* File info bar */}
-          <div className="border-[3px] border-black bg-[#fafafa] p-4">
-            <div className="flex items-center justify-between gap-4">
+          {/* File info card */}
+          <div className="border-[3px] border-black bg-white">
+            <div className="flex items-center justify-between gap-4 p-4">
               <div className="flex items-center gap-3 min-w-0">
-                <Film size={20} className="text-[#1a1a1a]/60 shrink-0" />
+                <div className="w-10 h-10 border-[3px] border-black bg-[#1a1a1a] flex items-center justify-center shrink-0">
+                  <Film size={18} className="text-[#F9FF00]" />
+                </div>
                 <div className="min-w-0">
-                  <p className="font-oswald text-sm font-bold uppercase tracking-tight truncate">
-                    {file.name}
-                  </p>
+                  <p className="font-oswald text-sm font-bold uppercase tracking-tight truncate">{file.name}</p>
                   <p className="font-inter text-xs text-[#1a1a1a]/50">
-                    {formatBytes(file.size)}
-                    {videoDuration > 0 && ` · ${formatDuration(videoDuration)}`}
+                    {fmt(file.size)}{resolution && ` · ${resolution}`}{duration > 0 && ` · ${fmtDur(duration)}`}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={reset}
-                disabled={isProcessing}
-                className="btn-brutal btn-brutal-ghost px-3 py-1 text-xs disabled:opacity-30"
-                aria-label="Remove file"
-              >
+              <button type="button" onClick={reset} disabled={isProcessing} aria-label="Remove file"
+                className="p-2 border-[3px] border-black bg-white hover:bg-red-50 transition-colors disabled:opacity-30">
                 <X size={14} />
               </button>
             </div>
           </div>
 
           {/* Settings */}
-          <div className="space-y-4">
-            {/* Compression mode */}
-            <div>
-              <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-3">
-                Compression mode
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
-                {MODES.map((m) => {
-                  const Icon = m.icon;
-                  const isActive = mode === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setMode(m.id)}
-                      disabled={isProcessing}
-                      className={`border-[3px] border-black p-4 text-left transition-colors m-[-1.5px] relative disabled:opacity-50 ${
-                        isActive
-                          ? "bg-[#F9FF00] text-[#1a1a1a]"
-                          : "bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon
-                          size={16}
-                          className={
-                            isActive ? "text-[#1a1a1a]" : "text-[#1a1a1a]/50"
-                          }
-                        />
-                        <span className="font-oswald text-xs font-bold uppercase tracking-wider">
-                          {m.label}
-                        </span>
-                      </div>
-                      <p className="font-inter text-[10px] text-[#1a1a1a]/60 leading-snug">
-                        {m.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Output format */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {!isProcessing && state !== "done" && (
+            <div className="space-y-4">
+              {/* Mode selector */}
               <div>
-                <label className="font-oswald text-xs font-bold uppercase tracking-widest block mb-2">
-                  Output format
-                </label>
-                <select
-                  className="input-brutal w-full"
-                  value={outputFormat}
-                  onChange={(e) =>
-                    setOutputFormat(e.target.value as "mp4" | "webm")
-                  }
-                  disabled={isProcessing}
-                >
-                  <option value="mp4">MP4 (H.264 + AAC)</option>
-                  <option value="webm">WebM (VP9 + Opus)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Progress ───────────────────────────────────────────────── */}
-          {isProcessing && (
-            <div className="border-[3px] border-black p-5 bg-white">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Loader2
-                    size={16}
-                    className="animate-spin text-[#1a1a1a]/50"
-                  />
-                  <span className="font-inter text-sm text-[#1a1a1a]/70">
-                    {progressText}
-                  </span>
+                <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-2">Compression mode</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0">
+                  {MODES.map((m) => {
+                    const Ic = m.icon;
+                    const active = mode === m.id;
+                    return (
+                      <button key={m.id} type="button" onClick={() => setMode(m.id)}
+                        className={`border-[3px] border-black p-3 text-left transition-colors m-[-1.5px] relative ${
+                          active ? "bg-[#F9FF00] text-[#1a1a1a] z-10" : "bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a]"
+                        }`}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <Ic size={14} className={active ? "text-[#1a1a1a]" : "text-[#1a1a1a]/40"} />
+                          <span className="font-oswald text-xs font-bold uppercase tracking-wider">{m.label}</span>
+                        </div>
+                        <p className="font-inter text-[10px] text-[#1a1a1a]/60 leading-snug">{m.desc}</p>
+                      </button>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  onClick={cancel}
-                  className="font-oswald text-[10px] font-bold uppercase tracking-wider text-[#FF0004] hover:text-[#FF0004]/80 transition-colors"
-                >
-                  Cancel
-                </button>
               </div>
-              {/* Progress bar */}
-              <div className="h-4 border-[3px] border-black bg-[#fafafa] relative overflow-hidden">
-                <div
-                  className="absolute inset-y-0 left-0 bg-[#F9FF00] transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center font-oswald text-[10px] font-bold uppercase tracking-widest z-10">
-                  {progress}%
-                </span>
+
+              {/* Format + estimate row */}
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="w-56">
+                  <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-2">Output format</label>
+                  <select className="input-brutal w-full" value={outputFmt} onChange={(e) => setOutputFmt(e.target.value as "mp4" | "webm")}>
+                    <option value="mp4">MP4 (H.264 + AAC)</option>
+                    <option value="webm">WebM (VP9 + Opus)</option>
+                  </select>
+                </div>
+                {estimatedSize && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#fafafa] border-[3px] border-black">
+                    <Info size={12} className="text-[#1a1a1a]/40" />
+                    <span className="font-inter text-[10px] text-[#1a1a1a]/60">Estimated output: ~{estimatedSize}</span>
+                  </div>
+                )}
               </div>
-              {state === "loading-ffmpeg" && (
-                <p className="font-inter text-[10px] text-[#1a1a1a]/40 mt-2">
-                  First use downloads the FFmpeg engine (~25 MB). It's cached
-                  for subsequent uses.
-                </p>
+
+              {/* Compress button */}
+              <button type="button" onClick={() => void compress()}
+                className="btn-brutal btn-brutal-yellow w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-10 text-sm">
+                <Zap size={16} /> Compress video
+              </button>
+            </div>
+          )}
+
+          {/* Progress */}
+          {isProcessing && (
+            <div className="border-[3px] border-black bg-white">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-[#1a1a1a]/50" />
+                    <span className="font-inter text-sm text-[#1a1a1a]/70">{stageText}</span>
+                  </div>
+                  <button type="button" onClick={cancel}
+                    className="font-oswald text-[10px] font-bold uppercase tracking-wider text-[#FF0004] hover:underline">
+                    Cancel
+                  </button>
+                </div>
+                {/* Progress bar */}
+                <div className="h-3 border-[3px] border-black bg-[#f5f5f5] relative overflow-hidden">
+                  <div className="absolute inset-y-0 left-0 bg-[#F9FF00] transition-all duration-300 ease-out"
+                    style={{ width: `${state === "compressing" ? progress : 0}%` }} />
+                  {state !== "compressing" && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#F9FF00]/40 to-transparent animate-pulse" />
+                  )}
+                </div>
+                {state === "compressing" && progress > 0 && (
+                  <p className="font-oswald text-[10px] font-bold uppercase tracking-widest text-right mt-1">{progress}%</p>
+                )}
+              </div>
+              {(state === "stage-engine" || state === "stage-wasm") && (
+                <div className="border-t-[3px] border-black px-4 py-2 bg-[#fafafa]">
+                  <p className="font-inter text-[10px] text-[#1a1a1a]/40">
+                    First use downloads the compression engine (~25 MB). It's cached for future use.
+                  </p>
+                </div>
               )}
             </div>
           )}
 
-          {/* ── Compress button ─────────────────────────────────────────── */}
-          {state !== "done" && !isProcessing && (
-            <button
-              type="button"
-              onClick={() => void compress()}
-              className="btn-brutal btn-brutal-yellow w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-8"
-            >
-              <Zap size={16} />
-              Compress video
-            </button>
-          )}
-
-          {/* ── Result ──────────────────────────────────────────────────── */}
+          {/* Result */}
           <ToolResultPanel
             show={state === "done" && !!outputBlob}
-            title="Compressed result"
+            title="Compression complete"
             preview={
               <div className="w-full max-w-2xl">
                 {previewUrl ? (
-                  <video
-                    src={previewUrl}
-                    controls
-                    className="w-full max-h-[420px] border-[3px] border-black bg-black"
-                    preload="metadata"
-                  />
+                  <video src={previewUrl} controls preload="metadata"
+                    className="w-full max-h-[420px] border-[3px] border-black bg-black" />
                 ) : (
-                  <span className="font-inter text-xs text-[#1a1a1a]/50 py-8">
-                    Preview unavailable
-                  </span>
+                  <span className="font-inter text-xs text-[#1a1a1a]/50 py-8">Preview unavailable</span>
                 )}
               </div>
             }
             auxiliary={
               file && outputBlob ? (
-                <div className="flex flex-wrap items-center gap-4">
-                  <p>
-                    <strong>Original:</strong> {formatBytes(file.size)}
-                  </p>
-                  <p>
-                    <strong>Compressed:</strong> {formatBytes(outputBlob.size)}
-                  </p>
-                  <p
-                    className={`font-oswald font-bold uppercase text-sm ${
-                      reduction > 0 ? "text-green-700" : "text-[#FF0004]"
-                    }`}
-                  >
-                    {reduction > 0
-                      ? `↓ ${reduction}% smaller`
-                      : "No reduction"}
-                  </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <p className="font-oswald text-[9px] font-bold uppercase tracking-widest text-[#1a1a1a]/40">Original</p>
+                    <p className="font-inter text-sm font-medium">{fmt(file.size)}</p>
+                  </div>
+                  <div>
+                    <p className="font-oswald text-[9px] font-bold uppercase tracking-widest text-[#1a1a1a]/40">Compressed</p>
+                    <p className="font-inter text-sm font-medium">{fmt(outputBlob.size)}</p>
+                  </div>
+                  <div>
+                    <p className="font-oswald text-[9px] font-bold uppercase tracking-widest text-[#1a1a1a]/40">Reduction</p>
+                    <p className={`font-oswald text-sm font-bold ${reduction > 0 ? "text-green-700" : "text-[#FF0004]"}`}>
+                      {reduction > 0 ? `↓ ${reduction}%` : "None"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-oswald text-[9px] font-bold uppercase tracking-widest text-[#1a1a1a]/40">Time</p>
+                    <p className="font-inter text-sm">{compressTime}s</p>
+                  </div>
                 </div>
               ) : null
             }
             actions={
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={downloadOutput}
-                  disabled={!outputBlob}
-                  className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow disabled:opacity-40"
-                >
-                  <Download size={16} />
-                  Download .{outputFormat}
+                <button type="button" onClick={dl} disabled={!outputBlob}
+                  className="inline-flex items-center gap-2 btn-brutal btn-brutal-yellow disabled:opacity-40">
+                  <Download size={16} /> Download .{outputFmt}
                 </button>
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="btn-brutal btn-brutal-ghost"
-                >
-                  Compress another
+                <button type="button" onClick={reset} className="btn-brutal btn-brutal-ghost">
+                  <CheckCircle2 size={14} /> Compress another
                 </button>
               </div>
             }
