@@ -1,25 +1,22 @@
 /**
  * PDF Editor & Signer — professional browser-based PDF annotation.
- * CDN-loaded pdf-lib + pdf.js with jsDelivr/unpkg fallback.
+ * Phase A implementation.
  */
 import { useState, useRef, useCallback, useEffect } from "react";
 import { downloadBlob } from "@/lib/image-tool-helpers";
 import type { PdfLibDoc, PdfJsDoc } from "@/lib/pdf-cdn-loader";
 import { AnnotationCanvas, type AnnotationCanvasHandle, type DrawMode } from "./pdf/AnnotationCanvas";
-import {
-  Download, Loader2, Upload, Type, Pen, Highlighter, ImagePlus,
-  Trash2, ChevronUp, ChevronDown, RotateCcw, ZoomIn, ZoomOut,
-  MousePointer2, Undo2, AlertTriangle, FileText,
-} from "lucide-react";
+import { EditorToolbar } from "./pdf/EditorToolbar";
+import { ThumbnailSidebar } from "./pdf/ThumbnailSidebar";
+import { PropertiesPanel } from "./pdf/PropertiesPanel";
+import { useEditorHistory } from "./pdf/useEditorHistory";
+import { nextId, type EditorTool, type PageData, type Annotation } from "./pdf/types";
+import { Loader2, Upload, AlertTriangle, FileText } from "lucide-react";
 
 const MAX = 100 * 1024 * 1024;
 const fmt = (b: number) => b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`;
 
-type Tool = "select" | "text" | "draw" | "highlight" | "image";
 type Status = "idle" | "loading" | "ready" | "exporting" | "error";
-interface PageData { thumb: string; w: number; h: number }
-interface TextAnn { text: string; x: number; y: number; size: number; color: string; page: number }
-interface ImgAnn { dataUrl: string; x: number; y: number; w: number; h: number; page: number }
 
 export function PdfEditorTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -27,14 +24,15 @@ export function PdfEditorTool() {
   const [error, setError] = useState("");
   const [pages, setPages] = useState<PageData[]>([]);
   const [active, setActive] = useState(0);
-  const [tool, setTool] = useState<Tool>("select");
+  const [tool, setTool] = useState<EditorTool>("select");
   const [zoom, setZoom] = useState(1);
   const [drag, setDrag] = useState(false);
-  const [texts, setTexts] = useState<TextAnn[]>([]);
-  const [imgs, setImgs] = useState<ImgAnn[]>([]);
+
   const [textVal, setTextVal] = useState("");
   const [textSz, setTextSz] = useState(16);
   const [color, setColor] = useState("#1a1a1a");
+
+  const { annotations, push, undo, redo, reset: resetHistory, canUndo, canRedo } = useEditorHistory();
 
   const bytesRef = useRef<Uint8Array | null>(null);
   const docRef = useRef<PdfLibDoc | null>(null);
@@ -46,18 +44,19 @@ export function PdfEditorTool() {
 
   const renderPage = useCallback(async (idx: number) => {
     const d = jsDocRef.current, c = prevRef.current;
-    if (!d || !c || idx >= pages.length) return;
+    const pgData = pages[idx];
+    if (!d || !c || !pgData) return;
     const pg = await d.getPage(idx + 1);
-    const vp = pg.getViewport({ scale: 1.5 * zoom });
+    const vp = pg.getViewport({ scale: 1.5 * zoom, rotation: pgData.rotation });
     c.width = vp.width; c.height = vp.height;
     const ctx = c.getContext("2d");
     if (ctx) await pg.render({ canvasContext: ctx, viewport: vp }).promise;
-  }, [pages.length, zoom]);
+  }, [pages, zoom]);
 
   useEffect(() => { if (status === "ready") void renderPage(active); }, [active, zoom, status, renderPage]);
 
   const loadPdf = useCallback(async (f: File) => {
-    setError(""); setStatus("loading"); setTexts([]); setImgs([]); canvasMap.current.clear();
+    setError(""); setStatus("loading"); resetHistory(); canvasMap.current.clear();
     try {
       const { loadPdfLib, loadPdfJs } = await import("@/lib/pdf-cdn-loader");
       const [lib, js] = await Promise.all([loadPdfLib(), loadPdfJs()]);
@@ -75,7 +74,7 @@ export function PdfEditorTool() {
         const cv = document.createElement("canvas");
         cv.width = vp.width; cv.height = vp.height;
         await pg.render({ canvasContext: cv.getContext("2d")!, viewport: vp }).promise;
-        thumbs.push({ thumb: cv.toDataURL("image/jpeg", 0.5), w: vp.width, h: vp.height });
+        thumbs.push({ thumb: cv.toDataURL("image/jpeg", 0.5), w: vp.width, h: vp.height, rotation: 0 });
       }
       setPages(thumbs); setActive(0); setZoom(1); setTool("select"); setStatus("ready");
     } catch (e) {
@@ -85,7 +84,7 @@ export function PdfEditorTool() {
         : "Failed to load PDF. Please try a different file.");
       setStatus("error");
     }
-  }, []);
+  }, [resetHistory]);
 
   const pick = useCallback((f: File | null) => {
     if (!f) { setFile(null); return; }
@@ -121,6 +120,46 @@ export function PdfEditorTool() {
     setFile(f2); setActive(tgt); void loadPdf(f2);
   }, [active, pages.length, file, loadPdf]);
 
+  const rotatePg = useCallback(() => {
+    setPages(ps => ps.map((p, i) => i === active ? { ...p, rotation: (p.rotation + 90) % 360 } : p));
+  }, [active]);
+
+  const mergePdf = useCallback(() => {
+    const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".pdf,application/pdf";
+    inp.onchange = async () => {
+      const mf = inp.files?.[0]; if (!mf) return;
+      setStatus("loading");
+      try {
+        const { loadPdfLib } = await import("@/lib/pdf-cdn-loader");
+        const lib = await loadPdfLib();
+        const src1 = await lib.PDFDocument.load(bytesRef.current!);
+        const src2 = await lib.PDFDocument.load(await mf.arrayBuffer());
+        const cp = await src1.copyPages(src2, src2.getPageIndices());
+        for (const p of cp) src1.addPage(p);
+        const nb = await src1.save(); bytesRef.current = nb;
+        const f2 = new File([new Uint8Array(nb)], file?.name ?? "doc.pdf", { type: "application/pdf" });
+        setFile(f2); void loadPdf(f2);
+      } catch (e) { setError("Failed to merge PDF."); setStatus("ready"); }
+    };
+    inp.click();
+  }, [file, loadPdf]);
+
+  const splitPdf = useCallback(async () => {
+    if (!docRef.current || !bytesRef.current) return;
+    setStatus("loading");
+    try {
+      const { loadPdfLib } = await import("@/lib/pdf-cdn-loader");
+      const lib = await loadPdfLib();
+      const src = await lib.PDFDocument.load(bytesRef.current);
+      const nd = await lib.PDFDocument.create();
+      const cp = await nd.copyPages(src, [active]);
+      nd.addPage(cp[0]);
+      const nb = await nd.save();
+      downloadBlob(new Blob([new Uint8Array(nb)], { type: "application/pdf" }), `${(file?.name ?? "doc").replace(/\.pdf$/i, "")}-page-${active + 1}.pdf`);
+      setStatus("ready");
+    } catch (e) { setError("Failed to split PDF."); setStatus("ready"); }
+  }, [active, file]);
+
   // Click handlers
   const onPreviewClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const c = prevRef.current; if (!c) return;
@@ -128,12 +167,16 @@ export function PdfEditorTool() {
     const sx = c.width / r.width, sy = c.height / r.height;
     const x = (e.clientX - r.left) * sx, y = (e.clientY - r.top) * sy;
 
+    let newAnn: Annotation | null = null;
+
     if (tool === "text" && textVal.trim()) {
-      setTexts(p => [...p, { text: textVal, x, y, size: textSz, color, page: active }]);
-      const ctx = c.getContext("2d");
-      if (ctx) { ctx.font = `${textSz * 1.5 * zoom}px Inter, sans-serif`; ctx.fillStyle = color; ctx.fillText(textVal, x, y); }
-    }
-    if (tool === "image") {
+      newAnn = { id: nextId(), type: "text", text: textVal, x, y, size: textSz, color, page: active };
+    } else if (tool === "whiteout" || tool === "redact") {
+      newAnn = {
+        id: nextId(), type: tool, x, y, w: 100 * zoom, h: 20 * zoom, page: active,
+        text: tool === "whiteout" ? textVal : undefined, textSize: textSz
+      };
+    } else if (tool === "image") {
       const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
       inp.onchange = () => {
         const imgF = inp.files?.[0]; if (!imgF) return;
@@ -141,18 +184,19 @@ export function PdfEditorTool() {
         const img = new Image();
         img.onload = () => {
           const w = Math.min(img.naturalWidth, 200), h = (w / img.naturalWidth) * img.naturalHeight;
-          const ctx2 = c.getContext("2d"); if (ctx2) ctx2.drawImage(img, x, y, w, h);
           const tc = document.createElement("canvas");
           tc.width = img.naturalWidth; tc.height = img.naturalHeight;
           tc.getContext("2d")!.drawImage(img, 0, 0);
-          setImgs(p => [...p, { dataUrl: tc.toDataURL("image/png"), x, y, w, h, page: active }]);
+          push([...annotations, { id: nextId(), type: "image", dataUrl: tc.toDataURL("image/png"), x, y, w, h, page: active }]);
           URL.revokeObjectURL(url);
         };
         img.src = url;
       };
       inp.click();
     }
-  }, [tool, textVal, textSz, color, active, zoom]);
+
+    if (newAnn) push([...annotations, newAnn]);
+  }, [tool, textVal, textSz, color, active, zoom, annotations, push]);
 
   // Export
   const exportPdf = useCallback(async () => {
@@ -165,20 +209,37 @@ export function PdfEditorTool() {
       const font = await doc.embedFont(lib.StandardFonts.Helvetica);
       const scale = 1.5 * zoom;
 
-      for (const a of texts) {
-        if (a.page >= doc.getPageCount()) continue;
-        const pg = doc.getPage(a.page);
-        pg.drawText(a.text, { x: a.x / scale, y: pg.getSize().height - a.y / scale, size: a.size, font, color: lib.rgb(...hex(a.color)) });
+      // Apply rotations
+      for (let i = 0; i < pages.length; i++) {
+        if (pages[i].rotation !== 0) {
+          const pg = doc.getPage(i);
+          pg.setRotation(lib.degrees(pages[i].rotation));
+        }
       }
-      for (const a of imgs) {
+
+      for (const a of annotations) {
         if (a.page >= doc.getPageCount()) continue;
         const pg = doc.getPage(a.page);
         const h = pg.getSize().height;
-        const resp = await fetch(a.dataUrl);
-        const ib = new Uint8Array(await resp.arrayBuffer());
-        const emb = a.dataUrl.includes("image/png") ? await doc.embedPng(ib) : await doc.embedJpg(ib);
-        pg.drawImage(emb, { x: a.x / scale, y: h - a.y / scale - a.h / scale, width: a.w / scale, height: a.h / scale });
+
+        if (a.type === "text") {
+          pg.drawText(a.text, { x: a.x / scale, y: h - a.y / scale, size: a.size, font, color: lib.rgb(...hex(a.color)) });
+        } else if (a.type === "image") {
+          const resp = await fetch(a.dataUrl);
+          const ib = new Uint8Array(await resp.arrayBuffer());
+          const emb = a.dataUrl.includes("image/png") ? await doc.embedPng(ib) : await doc.embedJpg(ib);
+          pg.drawImage(emb, { x: a.x / scale, y: h - a.y / scale - a.h / scale, width: a.w / scale, height: a.h / scale });
+        } else if (a.type === "whiteout" || a.type === "redact") {
+          pg.drawRectangle({
+            x: a.x / scale, y: h - a.y / scale - a.h / scale, width: a.w / scale, height: a.h / scale,
+            color: a.type === "redact" ? lib.rgb(0,0,0) : lib.rgb(1,1,1)
+          });
+          if (a.type === "whiteout" && a.text) {
+            pg.drawText(a.text, { x: (a.x + 5) / scale, y: h - (a.y + a.h - 5) / scale, size: a.textSize || 12, font, color: lib.rgb(...hex(color)) });
+          }
+        }
       }
+
       for (const [pi, hdl] of canvasMap.current.entries()) {
         if (hdl.isEmpty() || pi >= doc.getPageCount()) continue;
         const resp = await fetch(hdl.toDataURL());
@@ -187,38 +248,43 @@ export function PdfEditorTool() {
         const { width: pw, height: ph } = pg.getSize();
         pg.drawImage(emb, { x: 0, y: 0, width: pw, height: ph });
       }
+
       const out = await doc.save();
       downloadBlob(new Blob([new Uint8Array(out)], { type: "application/pdf" }),
         `${(file?.name ?? "document").replace(/\.pdf$/i, "")}-edited.pdf`);
       setStatus("ready");
     } catch (e) { setError((e as Error).message || "Export failed."); setStatus("ready"); }
-  }, [texts, imgs, file, zoom]);
+  }, [annotations, file, zoom, color, pages]);
 
   const reset = useCallback(() => {
     jsDocRef.current?.destroy(); docRef.current = null; jsDocRef.current = null;
     bytesRef.current = null; canvasMap.current.clear();
     setFile(null); setPages([]); setActive(0); setTool("select");
-    setTexts([]); setImgs([]); setError(""); setStatus("idle"); setZoom(1);
-  }, []);
+    resetHistory(); setError(""); setStatus("idle"); setZoom(1);
+  }, [resetHistory]);
 
   const undoAnn = useCallback(() => {
     const hdl = canvasMap.current.get(active);
-    if (hdl && !hdl.isEmpty()) { hdl.undo(); return; }
-    if (texts.length > 0 && texts[texts.length - 1].page === active) { setTexts(p => p.slice(0, -1)); void renderPage(active); return; }
-    if (imgs.length > 0 && imgs[imgs.length - 1].page === active) { setImgs(p => p.slice(0, -1)); void renderPage(active); }
-  }, [active, texts, imgs, renderPage]);
+    if (hdl && !hdl.isEmpty() && (tool === "draw" || tool === "highlight")) { hdl.undo(); return; }
+    undo();
+  }, [active, tool, undo]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (status !== "ready") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undoAnn();
+      }
+      if (e.key === "Escape") setTool("select");
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [status, undoAnn, redo]);
 
   const dm: DrawMode = tool === "draw" ? "draw" : tool === "highlight" ? "highlight" : "none";
   const cur = pages[active];
-  const processing = status === "loading" || status === "exporting";
-
-  // Toolbar button
-  const Tb = ({ id, icon: Ic, label }: { id: Tool; icon: typeof Pen; label: string }) => (
-    <button type="button" onClick={() => setTool(id)} title={label} aria-label={label}
-      className={`p-2 border-[3px] border-black transition-colors ${tool === id ? "bg-[#F9FF00] text-[#1a1a1a] z-10" : "bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a]"}`}>
-      <Ic size={15} />
-    </button>
-  );
 
   return (
     <div className="space-y-4">
@@ -226,7 +292,6 @@ export function PdfEditorTool() {
         Edit, annotate, sign, and export PDFs <strong>in your browser</strong> — no uploads, no server. Max {fmt(MAX)}.
       </p>
 
-      {/* Drop zone */}
       {status === "idle" && !file && (
         <div onDrop={onDrop} onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
           className={`border-[3px] border-dashed p-12 text-center transition-all cursor-pointer ${drag ? "border-[#F9FF00] bg-[#F9FF00]/10 scale-[1.01]" : "border-black bg-[#fafafa] hover:bg-[#F9FF00]/5"}`}
@@ -239,7 +304,6 @@ export function PdfEditorTool() {
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div className="border-[3px] border-[#FF0004] bg-red-50/80 p-4 flex items-start gap-3">
           <AlertTriangle size={18} className="text-[#FF0004] shrink-0 mt-0.5" />
@@ -252,7 +316,6 @@ export function PdfEditorTool() {
         </div>
       )}
 
-      {/* Loading */}
       {status === "loading" && (
         <div className="border-[3px] border-black bg-white">
           <div className="p-6 flex items-center justify-center gap-3">
@@ -265,108 +328,47 @@ export function PdfEditorTool() {
         </div>
       )}
 
-      {/* ═══ EDITOR ═══ */}
       {status === "ready" && pages.length > 0 && (
-        <>
-          {/* Toolbar */}
-          <div className="border-[3px] border-black bg-[#1a1a1a] p-1.5 flex flex-wrap items-center gap-0.5">
-            <Tb id="select" icon={MousePointer2} label="Select" />
-            <Tb id="text" icon={Type} label="Add text" />
-            <Tb id="draw" icon={Pen} label="Draw / Sign" />
-            <Tb id="highlight" icon={Highlighter} label="Highlight" />
-            <Tb id="image" icon={ImagePlus} label="Add image" />
-            <div className="w-px h-7 bg-white/20 mx-1" />
-            <button type="button" onClick={undoAnn} title="Undo" aria-label="Undo"
-              className="p-2 border-[3px] border-black bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a] transition-colors">
-              <Undo2 size={15} />
-            </button>
-            <div className="w-px h-7 bg-white/20 mx-1" />
-            <button type="button" onClick={delPage} disabled={pages.length <= 1} title="Delete page" aria-label="Delete page"
-              className="p-2 border-[3px] border-black bg-white hover:bg-red-50 text-[#1a1a1a] disabled:opacity-30 transition-colors">
-              <Trash2 size={15} />
-            </button>
-            <button type="button" onClick={() => void movePg(-1)} disabled={active === 0} title="Move up" aria-label="Move page up"
-              className="p-2 border-[3px] border-black bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a] disabled:opacity-30 transition-colors">
-              <ChevronUp size={15} />
-            </button>
-            <button type="button" onClick={() => void movePg(1)} disabled={active >= pages.length - 1} title="Move down" aria-label="Move page down"
-              className="p-2 border-[3px] border-black bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a] disabled:opacity-30 transition-colors">
-              <ChevronDown size={15} />
-            </button>
-            <div className="w-px h-7 bg-white/20 mx-1" />
-            <button type="button" onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} title="Zoom out" aria-label="Zoom out"
-              className="p-2 border-[3px] border-black bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a] transition-colors"><ZoomOut size={15} /></button>
-            <span className="font-oswald text-[10px] font-bold uppercase tracking-wider text-white px-2 min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => setZoom(z => Math.min(3, z + 0.25))} title="Zoom in" aria-label="Zoom in"
-              className="p-2 border-[3px] border-black bg-white hover:bg-[#F9FF00]/10 text-[#1a1a1a] transition-colors"><ZoomIn size={15} /></button>
-            <div className="flex-1" />
-            <button type="button" onClick={reset} title="Reset project" aria-label="Reset"
-              className="p-2 border-[3px] border-black bg-white hover:bg-red-50 text-[#1a1a1a] transition-colors"><RotateCcw size={15} /></button>
-            <button type="button" onClick={() => void exportPdf()} disabled={processing}
-              className="btn-brutal btn-brutal-yellow inline-flex items-center gap-1.5 py-1 px-4 text-xs disabled:opacity-50">
-              <Download size={14} /> Export PDF
-            </button>
-          </div>
+        <div className="border-[3px] border-black flex flex-col bg-[#e0e0e0] shadow-xl" style={{ height: "80vh", minHeight: 600 }}>
+          <EditorToolbar
+            tool={tool} setTool={setTool} zoom={zoom} setZoom={setZoom}
+            canUndo={canUndo} canRedo={canRedo} onUndo={undoAnn} onRedo={redo}
+            onReset={reset} onExport={() => void exportPdf()} onMerge={mergePdf} onSplit={() => void splitPdf()}
+            isProcessing={status === "exporting"}
+          />
+          
+          <div className="flex flex-1 overflow-hidden">
+            <ThumbnailSidebar
+              pages={pages} active={active} setActive={setActive}
+              onMoveUp={() => void movePg(-1)} onMoveDown={() => void movePg(1)}
+              onDelete={() => void delPage()} onRotate={rotatePg}
+            />
 
-          {/* Tool options */}
-          {tool === "text" && (
-            <div className="border-[3px] border-black bg-white p-3 flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[140px]">
-                <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-1">Text</label>
-                <input className="input-brutal w-full text-sm" value={textVal} onChange={e => setTextVal(e.target.value)} placeholder="Type here, then click on page…" />
-              </div>
-              <div className="w-20">
-                <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-1">Size</label>
-                <input type="number" className="input-brutal w-full text-sm" value={textSz} min={8} max={72} onChange={e => setTextSz(+e.target.value || 16)} />
-              </div>
-              <div className="w-14">
-                <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-1">Color</label>
-                <input type="color" className="w-full h-[38px] border-[3px] border-black cursor-pointer" value={color} onChange={e => setColor(e.target.value)} />
-              </div>
-            </div>
-          )}
-          {tool === "draw" && (
-            <div className="border-[3px] border-black bg-white p-3 flex flex-wrap items-end gap-3">
-              <div className="w-14">
-                <label className="font-oswald text-[10px] font-bold uppercase tracking-[0.15em] block mb-1">Color</label>
-                <input type="color" className="w-full h-[38px] border-[3px] border-black cursor-pointer" value={color} onChange={e => setColor(e.target.value)} />
-              </div>
-              <button type="button" onClick={() => canvasMap.current.get(active)?.clearStrokes()}
-                className="btn-brutal btn-brutal-ghost text-xs py-1 px-3">Clear strokes</button>
-              <p className="font-inter text-[10px] text-[#1a1a1a]/40 ml-auto">Draw or sign with mouse / touch</p>
-            </div>
-          )}
-          {tool === "highlight" && (
-            <div className="border-[3px] border-black bg-white p-3">
-              <p className="font-inter text-[10px] text-[#1a1a1a]/40">Click and drag to highlight areas with yellow marker</p>
-            </div>
-          )}
-          {tool === "image" && (
-            <div className="border-[3px] border-black bg-white p-3">
-              <p className="font-inter text-[10px] text-[#1a1a1a]/40">Click on the page to place an image, logo, or signature</p>
-            </div>
-          )}
+            <div className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-start bg-[#e0e0e0] relative">
+              <div className="relative inline-block shadow-2xl transition-transform" style={{ maxWidth: "100%", transformOrigin: "top center" }}>
+                <canvas ref={prevRef} className="bg-white border-[3px] border-black" 
+                  style={{ maxWidth: "100%", height: "auto" }} onClick={onPreviewClick} />
+                
+                {/* Render Annotations Overlay */}
+                <div className="absolute inset-0 pointer-events-none" style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}>
+                  {annotations.filter(a => a.page === active).map(a => {
+                    if (a.type === "text") {
+                      return <div key={a.id} style={{ position: "absolute", left: a.x / zoom, top: a.y / zoom, color: a.color, fontSize: a.size, fontFamily: "Inter, sans-serif", whiteSpace: "pre" }}>{a.text}</div>;
+                    }
+                    if (a.type === "image") {
+                      return <img key={a.id} src={a.dataUrl} style={{ position: "absolute", left: a.x / zoom, top: a.y / zoom, width: a.w / zoom, height: a.h / zoom }} alt="ann" />;
+                    }
+                    if (a.type === "whiteout" || a.type === "redact") {
+                      return (
+                        <div key={a.id} style={{ position: "absolute", left: a.x / zoom, top: a.y / zoom, width: a.w / zoom, height: a.h / zoom, backgroundColor: a.type === "redact" ? "black" : "white", border: a.type === "whiteout" ? "1px solid #ccc" : "none", display: "flex", alignItems: "center", paddingLeft: 4, color: color, fontSize: a.textSize || 12 }}>
+                          {a.type === "whiteout" && a.text}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
 
-          {/* Workspace */}
-          <div className="flex gap-0 border-[3px] border-black bg-[#e0e0e0]" style={{ minHeight: 460 }}>
-            {/* Thumbnails */}
-            <div className="w-20 sm:w-28 shrink-0 border-r-[3px] border-black bg-[#1a1a1a] overflow-y-auto" style={{ maxHeight: "72vh" }}>
-              {pages.map((pg, i) => (
-                <button key={i} type="button" onClick={() => setActive(i)}
-                  className={`block w-full p-1.5 sm:p-2 transition-colors ${i === active ? "bg-[#F9FF00]" : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"}`}>
-                  <img src={pg.thumb} alt={`Page ${i + 1}`} className="w-full border border-black/30 shadow-sm" />
-                  <span className={`font-oswald text-[8px] sm:text-[9px] font-bold uppercase tracking-wider mt-1 block text-center ${i === active ? "text-[#1a1a1a]" : "text-white/60"}`}>
-                    {i + 1}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Canvas preview */}
-            <div className="flex-1 overflow-auto p-4 sm:p-6 flex justify-center items-start" style={{ maxHeight: "72vh" }}>
-              <div className="relative inline-block shadow-2xl" style={{ maxWidth: "100%" }}>
-                <canvas ref={prevRef} className="border-[3px] border-black bg-white" style={{ maxWidth: "100%", height: "auto" }}
-                  onClick={onPreviewClick} />
                 {cur && (
                   <AnnotationCanvas
                     ref={el => { if (el) canvasMap.current.set(active, el); }}
@@ -376,10 +378,14 @@ export function PdfEditorTool() {
                 )}
               </div>
             </div>
+
+            <PropertiesPanel
+              tool={tool} textVal={textVal} setTextVal={setTextVal} textSz={textSz} setTextSz={setTextSz}
+              color={color} setColor={setColor} onClearStrokes={() => canvasMap.current.get(active)?.clearStrokes()}
+            />
           </div>
 
-          {/* Status bar */}
-          <div className="border-[3px] border-black bg-[#1a1a1a] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="border-t-[3px] border-black bg-[#1a1a1a] px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-20 relative">
             <div className="flex items-center gap-2">
               <FileText size={12} className="text-[#F9FF00]" />
               <span className="font-inter text-xs text-white/60">
@@ -387,17 +393,18 @@ export function PdfEditorTool() {
               </span>
             </div>
             <span className="font-inter text-[10px] text-white/30">
-              {texts.length} text · {imgs.length} images · {[...canvasMap.current.values()].filter(h => !h.isEmpty()).length} drawings
+              {annotations.length} items
             </span>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Exporting */}
       {status === "exporting" && (
-        <div className="border-[3px] border-black p-6 flex items-center justify-center gap-3 bg-[#F9FF00]">
-          <Loader2 size={20} className="animate-spin" />
-          <span className="font-oswald text-sm font-bold uppercase tracking-wider">Exporting PDF…</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="border-[3px] border-black p-8 flex flex-col items-center justify-center gap-4 bg-[#F9FF00] shadow-[16px_16px_0px_rgba(0,0,0,1)]">
+            <Loader2 size={32} className="animate-spin text-[#1a1a1a]" />
+            <span className="font-oswald text-xl font-bold uppercase tracking-wider text-[#1a1a1a]">Exporting PDF…</span>
+          </div>
         </div>
       )}
     </div>

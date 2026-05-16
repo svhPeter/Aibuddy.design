@@ -25,6 +25,8 @@ export interface PdfLibModule {
     create(): Promise<PdfLibDoc>;
   };
   rgb(r: number, g: number, b: number): any;
+  grayscale(v: number): any;
+  degrees(d: number): any;
   StandardFonts: Record<string, string>;
 }
 
@@ -44,6 +46,8 @@ export interface PdfLibDoc {
 
 export interface PdfLibPage {
   getSize(): { width: number; height: number };
+  getRotation(): { angle: number };
+  setRotation(rotation: any): void;
   drawText(text: string, opts: Record<string, any>): void;
   drawImage(img: any, opts: Record<string, any>): void;
   drawRectangle(opts: Record<string, any>): void;

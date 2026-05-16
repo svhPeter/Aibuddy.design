@@ -41,19 +41,10 @@ const fmt = (b: number) => {
 
 const fmtDur = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-// CDN URLs with fallback
-const FFMPEG_URLS = [
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js",
-  "https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js",
-];
-const CORE_JS_URLS = [
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
-  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
-];
-const CORE_WASM_URLS = [
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm",
-  "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm",
-];
+// Self-hosted FFmpeg assets (same-origin = no Worker CORS error)
+const FFMPEG_SELF = "/vendor/ffmpeg/ffmpeg.js";
+const CORE_JS_SELF = "/vendor/ffmpeg/ffmpeg-core.js";
+const CORE_WASM_SELF = "/vendor/ffmpeg/ffmpeg-core.wasm";
 
 // ── FFmpeg Loader ────────────────────────────────────────────────────────
 
@@ -73,9 +64,9 @@ async function initFFmpeg(
 ): Promise<FFmpegInstance> {
   const { loadScriptWithFallback, toBlobURL } = await import("@/lib/cdn-loader");
 
-  // Stage 1: Load FFmpeg library
+  // Stage 1: Load FFmpeg library from same origin (critical for Worker)
   onStage("Loading FFmpeg engine…");
-  await loadScriptWithFallback(FFMPEG_URLS, "FFmpeg engine");
+  await loadScriptWithFallback([FFMPEG_SELF], "FFmpeg engine");
 
   const FFmpegWASM = (window as any).FFmpegWASM;
   if (!FFmpegWASM?.FFmpeg) throw new Error("FFmpeg library failed to initialize.");
@@ -83,23 +74,11 @@ async function initFFmpeg(
   const ffmpeg = new FFmpegWASM.FFmpeg();
   ffmpeg.on("progress", onProgress);
 
-  // Stage 2: Load WASM core
-  onStage("Downloading compression engine (≈25 MB)…");
+  // Stage 2: Load WASM core (same-origin first, CDN fallback)
+  onStage("Downloading compression engine (≈25 MB, cached after first use)…");
 
-  let coreURL: string | undefined;
-  let wasmURL: string | undefined;
-
-  // Try each core JS URL
-  for (const url of CORE_JS_URLS) {
-    try { coreURL = await toBlobURL(url, "text/javascript"); break; } catch { /* next */ }
-  }
-  if (!coreURL) throw new Error("Unable to download FFmpeg core. Check your connection.");
-
-  // Try each WASM URL
-  for (const url of CORE_WASM_URLS) {
-    try { wasmURL = await toBlobURL(url, "application/wasm"); break; } catch { /* next */ }
-  }
-  if (!wasmURL) throw new Error("Unable to download WASM binary. Check your connection.");
+  const coreURL = await toBlobURL(CORE_JS_SELF, "text/javascript");
+  const wasmURL = await toBlobURL(CORE_WASM_SELF, "application/wasm");
 
   onStage("Initializing compression engine…");
   await ffmpeg.load({ coreURL, wasmURL });
